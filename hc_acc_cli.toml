@@ -1,0 +1,10 @@
+[model]
+download_dir="download"
+
+[model.aria2]
+exec_path=""
+conf_path=""
+
+[peer]
+data_path="peers.json"
+

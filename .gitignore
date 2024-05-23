@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyi
+*.pyw
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+*.code-workspace
+
+# Miscellaneous
+*.log
+*.swp
+.DS_Store
