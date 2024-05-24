@@ -1,12 +1,15 @@
-from contextvars import ContextVar
+import asyncio
 import os
-from huggingface_hub import HfApi
 import re
 
 from aiohttp import web
 from aiohttp import streamer
+from contextvars import ContextVar
+from huggingface_hub import HfApi
+from common.peer_store import PeerStore
+from server.peer_prober import PeerProber
 
-ctx_var_peer_manager = ContextVar("PeerManager")
+ctx_var_peer_prober = ContextVar("PeerProber")
 
 
 @streamer
@@ -49,8 +52,8 @@ async def pong(request):
 
 
 async def alive_peers(request):
-    peer_manager = ctx_var_peer_manager.get()
-    peers = peer_manager.get_actives()
+    peer_prober = ctx_var_peer_prober.get()
+    peers = peer_prober.get_actives()
     return web.json_response([peer.to_dict() for peer in peers])
 
 
@@ -67,16 +70,24 @@ async def lookup_file(request):
 
 
 async def search_model(request):
-    await asyncio.sleep(5)
-    return web.Response(status=404)
+    await asyncio.sleep(1)
+    return web.Response(status=200)
 
 
-async def start_server(peer_manager, port):
-    ctx_var_peer_manager.set(peer_manager)
+async def start_server(port):
+    # set up context before starting the server
+    peer_store = PeerStore()
+    peer_store.open()
 
+    peer_prober = PeerProber(peer_store)
+    ctx_var_peer_prober.set(peer_prober)
+
+    # start aiohttp server
     app = web.Application()
 
-    app.router.add_head('/model/{text:.+}', lookup_file)
+    # app.router.add_head('/model/{text:.+}', lookup_file)
+    app.router.add_head(
+        '/model/{repo_id}/resolve/{revision}/{file_name}', search_model)
     app.router.add_get('/file/{file_name}', download_file)
     app.router.add_get('/ping', pong)
     app.router.add_get('/alive_peers', alive_peers)
@@ -85,3 +96,6 @@ async def start_server(peer_manager, port):
     await runner.setup()
     site = web.TCPSite(runner=runner, host='0.0.0.0', port=port)
     await site.start()
+
+    # start peer prober
+    await peer_prober.start_probe()

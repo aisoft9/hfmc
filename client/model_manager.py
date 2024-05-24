@@ -9,7 +9,8 @@ from prettytable import PrettyTable
 from huggingface_hub import HfApi
 from huggingface_hub import scan_cache_dir
 
-from http_client import alive_peers, search_model
+from client.http_client import alive_peers, search_model
+
 
 class ModelManager:
     def init(self):
@@ -26,9 +27,9 @@ class ModelManager:
         os.makedirs(self.download_dir, exist_ok=True)
 
         hf_api = HfApi()
-        repo_local_path = hf_api.snapshot_download(repo_id, revision=revision, cache_dir=self.download_dir, allow_patterns=["*.txt", "*.json"])
+        repo_local_path = hf_api.snapshot_download(
+            repo_id, revision=revision, cache_dir=self.download_dir, allow_patterns=["*.txt", "*.json"])
         print(repo_local_path)
-
 
     def ls(self, repo_id):
         hf_cache_info = scan_cache_dir(cache_dir=self.download_dir)
@@ -46,22 +47,21 @@ class ModelManager:
         ]
 
         hf_cache_info_table.add_rows([
-                                        repo.repo_id,
-                                        repo.repo_type,
-                                        "{:>12}".format(repo.size_on_disk_str),
-                                        repo.nb_files,
-                                        repo.last_accessed_str,
-                                        repo.last_modified_str,
-                                        ", ".join(sorted(repo.refs)),
-                                        str(repo.repo_path),
-                                    ]
-                                    for repo in sorted(
+            repo.repo_id,
+            repo.repo_type,
+            "{:>12}".format(repo.size_on_disk_str),
+            repo.nb_files,
+            repo.last_accessed_str,
+            repo.last_modified_str,
+            ", ".join(sorted(repo.refs)),
+            str(repo.repo_path),
+        ]
+            for repo in sorted(
             filter(lambda r: True if (not repo_id or repo_id == r.repo_id) else False,
-                hf_cache_info.repos),
+                   hf_cache_info.repos),
             key=lambda repo: repo.repo_id)
-                                    )
+        )
         print(hf_cache_info_table)
-
 
     def rm(self, repo_id, branch, revision):
         hf_cache_info = scan_cache_dir(cache_dir=self.download_dir)
@@ -83,24 +83,27 @@ class ModelManager:
                 raise ValueError(revision + " too short!")
 
             to_delete_revisions_iter = map(lambda rev: rev.commit_hash,
-                                        filter(lambda rev: rev.commit_hash.startswith(revision), select_repo.revisions))
+                                           filter(lambda rev: rev.commit_hash.startswith(revision), select_repo.revisions))
         else:
             if branch:
                 to_delete_revisions_iter = map(lambda rev: rev.commit_hash,
-                                            filter(lambda rev: branch in rev.refs, select_repo.revisions))
+                                               filter(lambda rev: branch in rev.refs, select_repo.revisions))
             else:
-                to_delete_revisions_iter = map(lambda rev: rev.commit_hash, select_repo.revisions)
+                to_delete_revisions_iter = map(
+                    lambda rev: rev.commit_hash, select_repo.revisions)
 
         to_delete_revisions = list(to_delete_revisions_iter)
 
         if not to_delete_revisions:
-            raise LookupError("repo: {}, branch: {}, revision: {}. Not Found!".format(repo_id, branch, revision))
+            raise LookupError("repo: {}, branch: {}, revision: {}. Not Found!".format(
+                repo_id, branch, revision))
 
         for r in to_delete_revisions:
             print(r)
 
         sys.stdout.flush()
-        confirm = input("WARNING: revisions will be deleted! Enter [y/Y] to confirm: ")
+        confirm = input(
+            "WARNING: revisions will be deleted! Enter [y/Y] to confirm: ")
 
         if confirm.strip() not in ["y", "Y"]:
             print("Cancel delete!")
