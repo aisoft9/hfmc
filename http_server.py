@@ -47,6 +47,7 @@ async def pong(request):
     # print(f"[SERVER] seq={request.query['seq']}")
     return web.Response(text='pong')
 
+
 async def alive_peers(request):
     peer_manager = ctx_var_peer_manager.get()
     peers = peer_manager.get_actives()
@@ -63,6 +64,12 @@ async def lookup_file(request):
         # TODO 扫描本地的 cache dir，返回这个文件是否存在
 
     return web.Response(status=404)
+
+
+async def search_model(request):
+    await asyncio.sleep(5)
+    return web.Response(status=404)
+
 
 async def start_server(peer_manager, port):
     ctx_var_peer_manager.set(peer_manager)
