@@ -44,27 +44,48 @@ async def alive_peers():
 
 
 async def timeout_coro(coro, timeout, default):
-    async def _():
-        try:
-            return await asyncio.wait_for(coro, timeout)
-        except TimeoutError:
-            return default
-    return _()
+    try:
+        return await asyncio.wait_for(coro, timeout)
+    except TimeoutError:
+        return default
+
+
+async def search_coro(peer, repo_id, revision, file_name):
+    """Check if a certain file exists in a peer's model repository
+
+    Returns:
+        Peer or None: if the peer has the target file, return the peer, otherwise None
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.head(f"http://{peer.ip}:{peer.port}/model/{repo_id}/resolve/{revision}/{file_name}") as response:
+                if response.status == 200:
+                    return peer
+    except Exception:
+        return None
+
 
 async def search_model(peers, repo_id, revision, file_name):
     if not peers:
         return []
-    
-    async def do_search(peer):
-        try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(10)) as session:
-                print(f"http://{peer.ip}:{peer.port}/model/{repo_id}/resolve/{revision}/{file_name}")
-                async with session.head(f"http://{peer.ip}:{peer.port}/model/{repo_id}/resolve/{revision}/{file_name}") as response:
-                    if response.status == 200:
-                        return True
-        except Exception:
-            return False
 
-    tasks = [do_search(peer) for peer in peers]
-    results = await asyncio.gather(*tasks)
-    return [peer for peer in results if peer]
+    async def gen_coro(peer):
+        # for each peer, create a search corotine, and wrap it into
+        # timeout corotine, so that they can finish withing 10 sec
+        search = search_coro(peer, repo_id, revision, file_name)
+        return await timeout_coro(search, 10, None)
+
+    def finish(tasks):
+        return all([task.done() for task in tasks])
+
+    tasks = []
+
+    async with asyncio.TaskGroup() as g:
+        for peer in peers:
+            tasks.append(g.create_task(gen_coro(peer)))
+
+        while not finish(tasks):
+            await asyncio.sleep(1)
+            print(".", end="")
+
+    return [task.result() for task in tasks if task.result() is not None]
