@@ -19,11 +19,6 @@ model_manager = ModelManager()
 model_manager.init()
 
 
-def print_usage():
-    print("Usage: python hffs.py cmd [subcmd] [opts]")
-    sys.exit(1)
-
-
 def peer_cmd(args):
     if args.peer_command == "add":
         peer_manager.add_peer(args.IP, args.port)
@@ -51,7 +46,6 @@ async def model_cmd(args):
 
 async def daemon_cmd(args):
     if args.daemon_command == "start":
-        print(f"HFFS daemon started at port {args.port}!")
         await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
         await http_client.stop_server()

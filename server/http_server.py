@@ -97,5 +97,11 @@ async def start_server(port):
     site = web.TCPSite(runner=runner, host='0.0.0.0', port=port)
     await site.start()
 
-    # start peer prober
-    await peer_prober.start_probe()
+    # start peer prober to run in the background
+    asyncio.create_task(peer_prober.start_probe())
+
+    print(f"HFFS daemon started at port {port}!")
+
+    # keep the server running
+    while True:
+        await asyncio.sleep(3600)
