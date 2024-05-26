@@ -20,13 +20,15 @@ async def ping(peer):
             async with session.get(f"http://{peer.ip}:{peer.port}/ping?seq={seq}") as response:
                 if response.status == 200:
                     alive = True
-    finally:
-        peer.set_alive(alive)
-        peer.set_epoch(int(time.time()))
+    except Exception as e:
+        print(e)
 
-        print(
-            f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {'alive' if alive else 'dead'}")
-        return peer
+    peer.set_alive(alive)
+    peer.set_epoch(int(time.time()))
+
+    status_msg = "alive" if alive else "dead"
+    print(f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
+    return peer
 
 
 async def alive_peers():
