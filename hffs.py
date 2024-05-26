@@ -34,7 +34,7 @@ async def model_cmd(args):
     if args.model_command == "search":
         await model_manager.search_model(args.repo_id, args.revision, args.file)
     elif args.model_command == "add":
-        model_manager.add(args.repo_id, args.revision)
+        model_manager.add(args.repo_id, args.file, args.revision)
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":

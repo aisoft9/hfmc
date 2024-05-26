@@ -1,17 +1,13 @@
 import os
 from common.peer import Peer
-
-
-PEER_CONF_DIR = os.path.join(os.path.expanduser("~"), ".cache/hffs")
-PEER_CONF_FILE = "hffs_peers.conf"
-PEER_CONF_PATH = os.path.join(PEER_CONF_DIR, PEER_CONF_FILE)
+from common.settings import HFFS_HOME, HFFS_PEER_CONF
 
 
 def create_file():
-    os.makedirs(PEER_CONF_DIR, exist_ok=True)
-    if not os.path.exists(PEER_CONF_PATH):
-        with open(PEER_CONF_PATH, "w", encoding="utf-8"):
-            pass
+    os.makedirs(HFFS_HOME, exist_ok=True)
+    if not os.path.exists(HFFS_PEER_CONF):
+        with open(HFFS_PEER_CONF, "w", encoding="utf-8"):
+            print(f"Created {HFFS_PEER_CONF}")
 
 
 class PeerStore:
@@ -20,7 +16,7 @@ class PeerStore:
         self._peers = set()
 
     def _load_peers(self):
-        with open(PEER_CONF_PATH, "r+", encoding="utf-8") as f:
+        with open(HFFS_PEER_CONF, "r+", encoding="utf-8") as f:
             for line in f:
                 ip, port = line.strip().split(":")
                 peer = Peer(ip, port)
@@ -31,7 +27,7 @@ class PeerStore:
         self._load_peers()
 
     def close(self):
-        with open(PEER_CONF_PATH, "w", encoding="utf-8") as f:
+        with open(HFFS_PEER_CONF, "w", encoding="utf-8") as f:
             for peer in self._peers:
                 f.write(f"{peer.ip}:{peer.port}\n")
 
