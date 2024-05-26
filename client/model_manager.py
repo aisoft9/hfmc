@@ -10,7 +10,7 @@ from huggingface_hub import HfApi
 from huggingface_hub import scan_cache_dir, hf_hub_download
 from huggingface_hub.utils import LocalEntryNotFoundError
 
-from client.http_client import alive_peers, search_model
+from client import http_client
 from common.settings import HFFS_MODEL_DIR
 
 
@@ -20,10 +20,10 @@ class ModelManager:
             os.makedirs(HFFS_MODEL_DIR)
 
     async def search_model(self, repo_id, revision=None, file_name=None):
-        active_peers = await alive_peers()
+        active_peers = await http_client.alive_peers()
         avail_peers = []
         if len(active_peers) > 0:
-            avail_peers = await search_model(active_peers, repo_id, revision, file_name)
+            avail_peers = await http_client.search_model(active_peers, repo_id, revision, file_name)
         return (active_peers, avail_peers)
 
     def add(self, repo_id, file_name, revision="main"):
