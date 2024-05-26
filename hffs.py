@@ -32,7 +32,7 @@ def peer_cmd(args):
 
 async def model_cmd(args):
     if args.model_command == "search":
-        await model_manager.search_model(args.repo_id, args.revision, args.file)
+        await model_manager.search_model(args.repo_id, args.file, args.revision)
     elif args.model_command == "add":
         model_manager.add(args.repo_id, args.file, args.revision)
     elif args.model_command == "ls":
@@ -95,15 +95,15 @@ def arg_parser():
     model_ls_parser.add_argument('--repo_id')
     model_add_parser = model_subparsers.add_parser('add')
     model_add_parser.add_argument('repo_id')
-    model_add_parser.add_argument('--revision')
+    model_add_parser.add_argument('--revision', type=str, default="main")
     model_add_parser.add_argument('--file')
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--revision')
+    model_rm_parser.add_argument('--revision', type=str, default="main")
     model_rm_parser.add_argument('--file')
     model_search_parser = model_subparsers.add_parser('search')
     model_search_parser.add_argument('repo_id')
-    model_search_parser.add_argument('--revision')
+    model_search_parser.add_argument('--revision', type=str, default="main")
     model_search_parser.add_argument('--file')
 
     return parser.parse_args(), parser

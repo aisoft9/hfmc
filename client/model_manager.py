@@ -19,11 +19,11 @@ class ModelManager:
         if not os.path.exists(HFFS_MODEL_DIR):
             os.makedirs(HFFS_MODEL_DIR)
 
-    async def search_model(self, repo_id, revision=None, file_name=None):
+    async def search_model(self, repo_id, file_name, revision="main"):
         active_peers = await http_client.alive_peers()
         avail_peers = []
         if len(active_peers) > 0:
-            avail_peers = await http_client.search_model(active_peers, repo_id, revision, file_name)
+            avail_peers = await http_client.search_model(active_peers, repo_id, file_name, revision)
         return (active_peers, avail_peers)
 
     def add(self, repo_id, file_name, revision="main"):

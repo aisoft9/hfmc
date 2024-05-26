@@ -94,7 +94,7 @@ async def do_search(peers, repo_id, revision, file_name):
     return [task.result() for task in tasks if task.result() is not None]
 
 
-async def search_model(peers, repo_id, revision, file_name):
+async def search_model(peers, repo_id, file_name, revision):
     if not peers:
         print("No active peers to search")
         return []
