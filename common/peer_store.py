@@ -11,9 +11,17 @@ def create_file():
 
 
 class PeerStore:
-
     def __init__(self):
         self._peers = set()
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if traceback:
+            print(f"PeerStore error, type=<{type}>, value=<{value}>")
+        self.close()
 
     def _load_peers(self):
         with open(HFFS_PEER_CONF, "r+", encoding="utf-8") as f:

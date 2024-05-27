@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import argparse
-import sys
 import asyncio
 
 from client import http_client
@@ -11,26 +10,24 @@ from client.peer_manager import PeerManager
 from server import http_server
 
 
-peer_store = PeerStore()
-peer_store.open()
-peer_manager = PeerManager(peer_store)
-
-model_manager = ModelManager()
-model_manager.init()
-
-
 def peer_cmd(args):
-    if args.peer_command == "add":
-        peer_manager.add_peer(args.IP, args.port)
-    elif args.peer_command == "rm":
-        peer_manager.remove_peer(args.IP, args.port)
-    elif args.peer_command == "ls":
-        peer_manager.list_peers()
-    else:  # no matching subcmd
-        raise ValueError("Invalid subcommand")
+    with PeerStore() as store:
+        peer_manager = PeerManager(store)
+
+        if args.peer_command == "add":
+            peer_manager.add_peer(args.IP, args.port)
+        elif args.peer_command == "rm":
+            peer_manager.remove_peer(args.IP, args.port)
+        elif args.peer_command == "ls":
+            peer_manager.list_peers()
+        else:  # no matching subcmd
+            raise ValueError("Invalid subcommand")
 
 
 async def model_cmd(args):
+    model_manager = ModelManager()
+    model_manager.init()
+
     if args.model_command == "search":
         await model_manager.search_model(args.repo_id, args.file, args.revision)
     elif args.model_command == "add":
@@ -111,10 +108,10 @@ def arg_parser():
 
 async def main():
     args, parser = arg_parser()
-    try:
-        await exec_cmd(args, parser)
-    finally:
-        peer_store.close()
+    await exec_cmd(args, parser)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Server shut down ...")
