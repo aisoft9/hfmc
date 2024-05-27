@@ -63,7 +63,7 @@ async def search_coro(peer, repo_id, revision, file_name):
     """
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.head(f"http://{peer.ip}:{peer.port}/model/{repo_id}/resolve/{revision}/{file_name}") as response:
+            async with session.head(f"http://{peer.ip}:{peer.port}/{repo_id}/resolve/{revision}/{file_name}") as response:
                 if response.status == 200:
                     return peer
     except Exception:

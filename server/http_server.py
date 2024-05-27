@@ -4,12 +4,22 @@ import os
 from aiohttp import web
 from aiohttp import streamer
 from contextvars import ContextVar
-from huggingface_hub import HfApi
+
 from common.peer_store import PeerStore
 from server.peer_prober import PeerProber
 from common.hf_adapter import file_in_cache
+import huggingface_hub as hf
 
 ctx_var_peer_prober = ContextVar("PeerProber")
+
+
+def extract_model_info(request):
+    user = request.match_info['user']
+    model = request.match_info['model']
+    revision = request.match_info['revision']
+    file_name = request.match_info['file_name']
+    repo_id = f"{user}/{model}"
+    return repo_id, file_name, revision
 
 
 @streamer
@@ -26,48 +36,59 @@ async def file_sender(writer, file_path=None):
 
 
 async def download_file(request):
-    file_name = request.match_info['file_name']  # Could be a HUGE file
-    headers = {
-        "Content-disposition": "attachment; filename={file_name}".format(file_name=file_name)
-    }
+    repo_id, file_name, revision = extract_model_info(request)
+    cached = file_in_cache(repo_id, file_name, revision)
 
-    file_path = os.path.join('/home/sche/.cache/huggingface/hub', file_name)
+    if not cached:
+        print("download 404 not cached")
+        return web.Response(
+            body=f'File <{file_name}> is not cached',
+            status=404)
+
+    headers = {"Content-disposition": f"attachment; filename={file_name}"}
+
+    file_path = cached["file_path"]
 
     if not os.path.exists(file_path):
+        print("download 404 not exist")
         return web.Response(
-            body='File <{file_name}> does not exist'.format(
-                file_name=file_path),
+            body=f'File <{file_path}> does not exist',
             status=404
         )
 
+    print("download 200")
     return web.Response(
         body=file_sender(file_path=file_path),
         headers=headers
     )
 
 
-async def pong(request):
-    # print(f"[SERVER] seq={request.query['seq']}")
+async def pong(_):
+    # print(f"[SERVER] seq={_.query['seq']}")
     return web.Response(text='pong')
 
 
-async def alive_peers(request):
+async def alive_peers(_):
     peer_prober = ctx_var_peer_prober.get()
     peers = peer_prober.get_actives()
     return web.json_response([peer.to_dict() for peer in peers])
 
 
 async def search_model(request):
-    user = request.match_info['user']
-    model = request.match_info['model']
-    revision = request.match_info['revision']
-    file_name = request.match_info['file_name']
-
-    repo_id = f"{user}/{model}"
+    repo_id, file_name, revision = extract_model_info(request)
     cached = file_in_cache(repo_id, file_name, revision)
 
-    status = 200 if cached else 404
-    return web.Response(status=status)
+    if not cached:
+        return web.Response(status=404)
+    else:
+        headers = {
+            hf.constants.HUGGINGFACE_HEADER_X_REPO_COMMIT: cached["commit_hash"],
+            "ETag": cached["etag"],
+            "Content-Length": str(cached["size"]),
+            "Location": str(request.url),
+        }
+        print(f"search_model: {headers}")
+        return web.Response(status=200, headers=headers)
 
 
 async def start_server(port):
@@ -81,11 +102,15 @@ async def start_server(port):
     # start aiohttp server
     app = web.Application()
 
+    # HEAD requests
     app.router.add_head(
-        '/model/{user}/{model}/resolve/{revision}/{file_name}', search_model)
-    app.router.add_get('/file/{file_name}', download_file)
+        '/{user}/{model}/resolve/{revision}/{file_name}', search_model)
+
+    # GET requests
     app.router.add_get('/ping', pong)
     app.router.add_get('/alive_peers', alive_peers)
+    app.router.add_get(
+        '/{user}/{model}/resolve/{revision}/{file_name}', download_file)
 
     runner = web.AppRunner(app)
     await runner.setup()
