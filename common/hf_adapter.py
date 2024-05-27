@@ -39,7 +39,7 @@ def file_in_cache(repo_id, file_name, revision="main"):
     size = None
     file_path = None
     for f in rev_info.files:
-        if get_sym_path(repo_path, commit_hash, file_name) == str(f.file_path):
+        if os.path.normpath(get_sym_path(repo_path, commit_hash, file_name)) == str(f.file_path):
             size = f.size_on_disk
             etag = os.path.basename(os.path.normpath(f.blob_path))
             file_path = f.file_path
