@@ -5,11 +5,7 @@ import os
 import sys
 
 from prettytable import PrettyTable
-
-from huggingface_hub import HfApi
 from huggingface_hub import scan_cache_dir, hf_hub_download
-from huggingface_hub.utils import LocalEntryNotFoundError
-
 from client import http_client
 from common.settings import HFFS_MODEL_DIR
 
@@ -21,35 +17,45 @@ class ModelManager:
 
     async def search_model(self, repo_id, file_name, revision="main"):
         active_peers = await http_client.alive_peers()
-        avail_peers = []
-        if len(active_peers) > 0:
-            avail_peers = await http_client.search_model(active_peers, repo_id, file_name, revision)
+        avail_peers = await http_client.search_model(active_peers, repo_id, file_name, revision)
         return (active_peers, avail_peers)
 
-    def add(self, repo_id, file_name, revision="main"):
-        try:
-            path = hf_hub_download(repo_id,
-                                   revision=revision,
-                                   cache_dir=HFFS_MODEL_DIR,
-                                   filename=file_name,
-                                   endpoint="https://hf-mirror.com")
+    async def add(self, repo_id, file_name, revision="main"):
+        def do_download(endpoint):
+            try:
+                path = hf_hub_download(repo_id,
+                                       revision=revision,
+                                       cache_dir=HFFS_MODEL_DIR,
+                                       filename=file_name,
+                                       endpoint=endpoint)
+                return True, path
+            except Exception as e:
+                print(e)
+                return False, None
 
+        _, avails = await self.search_model(repo_id, file_name, revision)
+
+        for peer in avails:
+            done, path = do_download(f"http://{peer.ip}:{peer.port}")
+            if done:
+                print(path)
+                return
+
+        print("Cannot download from peers; try mirror sites")
+
+        done, path = do_download("https://hf-mirror.com")
+        if done:
             print(path)
             return
-        except LocalEntryNotFoundError:
-            print("Cannot find target model in mirror site; try to download from hf.co")
 
-        try:
-            path = hf_hub_download(repo_id,
-                                   revision=revision,
-                                   cache_dir=HFFS_MODEL_DIR,
-                                   filename=file_name,
-                                   endpoint="https://hf-mirror.com/")
+        print("Cannot download from mirror site; try hf.co")
 
+        done, path = do_download("https://huggingface.co")
+        if done:
             print(path)
             return
-        except LocalEntryNotFoundError:
-            print("Cannot find target model in hf.co; double check the model info")
+
+        print("Cannot find target model in hf.co; double check the model info")
 
     def ls(self, repo_id):
         hf_cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
