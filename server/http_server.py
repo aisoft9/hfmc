@@ -92,36 +92,35 @@ async def search_model(request):
 
 
 async def start_server(port):
-    # set up context before starting the server
-    peer_store = PeerStore()
-    peer_store.open()
+    with PeerStore() as peer_store:
+        # set up context before starting the server
+        peer_prober = PeerProber(peer_store)
+        ctx_var_peer_prober.set(peer_prober)
 
-    peer_prober = PeerProber(peer_store)
-    ctx_var_peer_prober.set(peer_prober)
+        # start aiohttp server
+        app = web.Application()
 
-    # start aiohttp server
-    app = web.Application()
+        # HEAD requests
+        app.router.add_head(
+            '/{user}/{model}/resolve/{revision}/{file_name}', search_model)
 
-    # HEAD requests
-    app.router.add_head(
-        '/{user}/{model}/resolve/{revision}/{file_name}', search_model)
+        # GET requests
+        app.router.add_get('/ping', pong)
+        app.router.add_get('/alive_peers', alive_peers)
+        app.router.add_get(
+            '/{user}/{model}/resolve/{revision}/{file_name}', download_file)
 
-    # GET requests
-    app.router.add_get('/ping', pong)
-    app.router.add_get('/alive_peers', alive_peers)
-    app.router.add_get(
-        '/{user}/{model}/resolve/{revision}/{file_name}', download_file)
+        # start web server
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner=runner, host='0.0.0.0', port=port)
+        await site.start()
 
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner=runner, host='0.0.0.0', port=port)
-    await site.start()
+        # start peer prober to run in the background
+        asyncio.create_task(peer_prober.start_probe())
 
-    # start peer prober to run in the background
-    asyncio.create_task(peer_prober.start_probe())
+        print(f"HFFS daemon started at port {port}!")
 
-    print(f"HFFS daemon started at port {port}!")
-
-    # keep the server running
-    while True:
-        await asyncio.sleep(3600)
+        # keep the server running
+        while True:
+            await asyncio.sleep(3600)
