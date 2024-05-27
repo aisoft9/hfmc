@@ -11,10 +11,12 @@ idna==3.7
 ifaddr==0.2.0
 multidict==6.0.5
 packaging==24.0
+prettytable==3.10.0
 PyYAML==6.0.1
 requests==2.31.0
 tqdm==4.66.4
 typing_extensions==4.11.0
 urllib3==2.2.1
+wcwidth==0.2.13
 yarl==1.9.4
 zeroconf==0.132.2

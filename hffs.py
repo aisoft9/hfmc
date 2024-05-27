@@ -3,22 +3,20 @@ import argparse
 import sys
 import asyncio
 
-from peer import Peer
-from peer_manager import PeerStore
-from model_manager import ModelManager
-from peer_manager import PeerManager
-from http_server import start_server
+from client import http_client
+from common.peer import Peer
+from common.peer_store import PeerStore
+from client.model_manager import ModelManager
+from client.peer_manager import PeerManager
+from server import http_server
 
 
 peer_store = PeerStore()
+peer_store.open()
 peer_manager = PeerManager(peer_store)
 
 model_manager = ModelManager()
 model_manager.init()
-
-def print_usage():
-    print("Usage: python hffs.py cmd [subcmd] [opts]")
-    sys.exit(1)
 
 
 def peer_cmd(args):
@@ -34,25 +32,24 @@ def peer_cmd(args):
 
 async def model_cmd(args):
     if args.model_command == "search":
-        actives, avails = await model_manager.search_model(args.repo_id, args.revision, args.file)
-        print(f"Checked following peers:")
-        print(f"{Peer.print_peers(actives)}")
-        print(f"Peers who have the model:")
-        print(f"{Peer.print_peers(avails)}")
+        await model_manager.search_model(args.repo_id, args.file, args.revision)
     elif args.model_command == "add":
-        model_manager.add(args.repo_id, args.revision)
+        model_manager.add(args.repo_id, args.file, args.revision)
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":
-        model_manager.rm(args.repo_id, branch=args.revision, revision=args.revision)
+        model_manager.rm(args.repo_id, branch=args.revision,
+                         revision=args.revision)
     else:
         raise ValueError("Invalid subcommand")
 
 
-async def service_cmd(args):
-    print("HFFS daemon started! port", args.port)
-    await asyncio.create_task(start_server(peer_manager, args.port))
-    await asyncio.create_task(peer_manager.start_probe())
+async def daemon_cmd(args):
+    if args.daemon_command == "start":
+        await http_server.start_server(args.port)
+    elif args.daemon_command == "stop":
+        await http_client.stop_server()
+        print("HFFS daemon stopped!")
 
 
 async def exec_cmd(args, parser):
@@ -61,10 +58,8 @@ async def exec_cmd(args, parser):
             peer_cmd(args)
         elif args.command == "model":
             await model_cmd(args)
-        elif args.command == "start":
-            await service_cmd(args)
-        elif args.command == "stop":
-            pass
+        elif args.command == "daemon":
+            await daemon_cmd(args)
         else:
             raise ValueError("Invalid command")
     except ValueError:
@@ -75,13 +70,12 @@ def arg_parser():
     parser = argparse.ArgumentParser(prog='hffs')
     subparsers = parser.add_subparsers(dest='command')
 
-    # hffs start [--port port]
-    start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('--port', type=int, default=8000)
-
-    # hffs stop [--destroy-cache]
-    stop_parser = subparsers.add_parser('stop')
-    stop_parser.add_argument('--destroy-cache', action='store_true')
+    # hffs daemon {start,stop} [--port port]
+    daemon_parser = subparsers.add_parser('daemon')
+    daemon_subparsers = daemon_parser.add_subparsers(dest='daemon_command')
+    daemon_start_parser = daemon_subparsers.add_parser('start')
+    daemon_start_parser.add_argument('--port', type=int, default=8000)
+    daemon_subparsers.add_parser('stop')
 
     # hffs peer {add,rm,ls} IP [--port port]
     peer_parser = subparsers.add_parser('peer')
@@ -92,7 +86,7 @@ def arg_parser():
     peer_rm_parser = peer_subparsers.add_parser('rm')
     peer_rm_parser.add_argument('IP')
     peer_rm_parser.add_argument('--port', type=int, default=8000)
-    peer_ls_parser = peer_subparsers.add_parser('ls')
+    peer_subparsers.add_parser('ls')
 
     # hffs model {ls,add,rm,search} [--repo-id id] [--revision REVISION] [--file FILE]
     model_parser = subparsers.add_parser('model')
@@ -101,15 +95,15 @@ def arg_parser():
     model_ls_parser.add_argument('--repo_id')
     model_add_parser = model_subparsers.add_parser('add')
     model_add_parser.add_argument('repo_id')
-    model_add_parser.add_argument('--revision')
+    model_add_parser.add_argument('--revision', type=str, default="main")
     model_add_parser.add_argument('--file')
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--revision')
+    model_rm_parser.add_argument('--revision', type=str, default="main")
     model_rm_parser.add_argument('--file')
     model_search_parser = model_subparsers.add_parser('search')
     model_search_parser.add_argument('repo_id')
-    model_search_parser.add_argument('--revision')
+    model_search_parser.add_argument('--revision', type=str, default="main")
     model_search_parser.add_argument('--file')
 
     return parser.parse_args(), parser
