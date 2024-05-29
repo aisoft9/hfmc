@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import asyncio
+import sys
 
 from client import http_client
 from common.peer import Peer
@@ -107,7 +108,13 @@ def arg_parser():
 
 async def main():
     args, parser = arg_parser()
-    await exec_cmd(args, parser)
+
+    try:
+        await asyncio.gather(exec_cmd(args, parser))
+    except Exception as e:
+        print("{}".format(e), file=sys.stderr, end="")
+        exit(1)
+
 
 if __name__ == "__main__":
     try:

@@ -119,8 +119,6 @@ class ModelManager:
             matched_revs = list(filter(lambda rev1: rev1.refs and revision in rev1.refs, matched_repo.revisions))
 
             if matched_revs:
-                # to_delete_refs_path.append(os.path.normpath(
-                #     REFS_IN_REPO_PATH_FORMAT.format(matched_repo.repo_path, revision)))
                 to_delete_refs_path.append(matched_repo.repo_path / "refs" / revision)
             else:
                 matched_revs = list(filter(lambda rev2: rev2.commit_hash.startswith(revision), matched_repo.revisions))
@@ -131,8 +129,6 @@ class ModelManager:
                 for rev in matched_revs:
                     if rev.refs:
                         for ref in rev.refs:
-                            # to_delete_refs_path.append(os.path.normpath(
-                            #     REFS_IN_REPO_PATH_FORMAT.format(matched_repo.repo_path, rev)))
                             to_delete_refs_path.append(matched_repo.repo_path / "refs" / ref)
 
                     to_delete_revs_path.append(rev.snapshot_path)
