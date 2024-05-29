@@ -35,8 +35,7 @@ async def model_cmd(args):
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":
-        model_manager.rm(args.repo_id, branch=args.revision,
-                         revision=args.revision)
+        model_manager.rm(args.repo_id, revision=args.revision, file_name=args.file)
     else:
         raise ValueError("Invalid subcommand")
 
