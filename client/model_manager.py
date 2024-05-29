@@ -5,9 +5,13 @@ import os
 import sys
 
 from prettytable import PrettyTable
-from huggingface_hub import scan_cache_dir, hf_hub_download
+from huggingface_hub import scan_cache_dir, hf_hub_download, DeleteCacheStrategy
 from client import http_client
 from common.settings import HFFS_MODEL_DIR
+
+
+def get_path_in_snapshot(repo_path, commit_hash, file_path):
+    return os.path.normpath(f"{repo_path}/snapshots/{commit_hash}/{file_path}")
 
 
 class ModelManager:
@@ -89,55 +93,96 @@ class ModelManager:
         )
         print(hf_cache_info_table)
 
-    def rm(self, repo_id, branch, revision):
-        hf_cache_info = scan_cache_dir(cache_dir=self.download_dir)
+    def rm(self, repo_id, revision, file_name):
+        if not repo_id:
+            raise ValueError("Repo id should not be empty!")
 
-        select_repo = None
+        cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
+        matched_repos = list(filter(lambda r: r.repo_id == repo_id, cache_info.repos))
+        only_one = 1
 
-        for repo in hf_cache_info.repos:
-            if repo.repo_id == repo_id:
-                select_repo = repo
-                break
+        if len(matched_repos) != only_one:
+            raise LookupError("Not found! repo: {}".format(repo_id))
 
-        if not select_repo:
-            raise LookupError(repo_id + " Not Found!")
+        matched_repo = matched_repos[0]
+        to_delete_repo_path = []
+        to_delete_refs_path = []
+        to_delete_revs_path = []
+        to_delete_blobs_path = []
 
-        to_delete_revisions_iter = None
+        if not revision:
+            if file_name:
+                raise LookupError("File should be None when revision is None!")
 
-        if revision:
-            if len(revision) < 7:
-                raise ValueError(revision + " too short!")
-
-            to_delete_revisions_iter = map(lambda rev: rev.commit_hash,
-                                           filter(lambda rev: rev.commit_hash.startswith(revision), select_repo.revisions))
+            to_delete_repo_path.append(matched_repo.repo_path)
         else:
-            if branch:
-                to_delete_revisions_iter = map(lambda rev: rev.commit_hash,
-                                               filter(lambda rev: branch in rev.refs, select_repo.revisions))
+            matched_revs = list(filter(lambda rev1: rev1.refs and revision in rev1.refs, matched_repo.revisions))
+
+            if matched_revs:
+                # to_delete_refs_path.append(os.path.normpath(
+                #     REFS_IN_REPO_PATH_FORMAT.format(matched_repo.repo_path, revision)))
+                to_delete_refs_path.append(matched_repo.repo_path / "refs" / revision)
             else:
-                to_delete_revisions_iter = map(
-                    lambda rev: rev.commit_hash, select_repo.revisions)
+                matched_revs = list(filter(lambda rev2: rev2.commit_hash.startswith(revision), matched_repo.revisions))
 
-        to_delete_revisions = list(to_delete_revisions_iter)
+                if not matched_revs:
+                    raise LookupError("Not found! rev: {}".format(revision))
 
-        if not to_delete_revisions:
-            raise LookupError("repo: {}, branch: {}, revision: {}. Not Found!".format(
-                repo_id, branch, revision))
+                for rev in matched_revs:
+                    if rev.refs:
+                        for ref in rev.refs:
+                            # to_delete_refs_path.append(os.path.normpath(
+                            #     REFS_IN_REPO_PATH_FORMAT.format(matched_repo.repo_path, rev)))
+                            to_delete_refs_path.append(matched_repo.repo_path / "refs" / ref)
 
-        for r in to_delete_revisions:
-            print(r)
+                    to_delete_revs_path.append(rev.snapshot_path)
 
-        sys.stdout.flush()
-        confirm = input(
-            "WARNING: revisions will be deleted! Enter [y/Y] to confirm: ")
+            if file_name:
+                to_delete_refs_path = []
+                to_delete_revs_path = []
+
+                if len(matched_revs) != only_one:
+                    raise LookupError("Revision should be unique when file not None! rev: {}".format(revision))
+
+                matched_rev = matched_revs[0]
+
+                for f in matched_rev.files:
+                    if str(f.file_path) == get_path_in_snapshot(matched_repo.repo_path, matched_rev.commit_hash,
+                                                                file_name):
+                        to_delete_revs_path.append(f.file_path)
+
+                        # 不支持符号链接的平台，blob_path == file_path, 不需要删除blob
+                        if f.blob_path != f.file_path:
+                            to_delete_blobs_path.append(f.blob_path)
+
+                        break
+
+                if not to_delete_revs_path:
+                    raise LookupError("Not found! file: {}".format(file_name))
+
+        show_delete_path = []
+
+        show_delete_path.extend(to_delete_repo_path)
+        show_delete_path.extend(to_delete_refs_path)
+        show_delete_path.extend(to_delete_revs_path)
+        show_delete_path.extend(to_delete_blobs_path)
+        print("")
+
+        for p in show_delete_path:
+            print(p)
+
+        confirm = input("\nWARNING: files or dirs will be delete! Enter [y/Y] to confirm: ")
 
         if confirm.strip() not in ["y", "Y"]:
             print("Cancel delete!")
             return
 
-        sys.stdout.flush()
+        delete_strategy = DeleteCacheStrategy(expected_freed_size=0,
+                                              blobs=frozenset(to_delete_blobs_path),
+                                              refs=frozenset(to_delete_refs_path),
+                                              repos=frozenset(to_delete_repo_path),
+                                              snapshots=frozenset(to_delete_revs_path))
 
-        delete_strategy = hf_cache_info.delete_revisions(*to_delete_revisions)
         delete_strategy.execute()
-        print("success delete {} revisions, free space: {}.\n".format(
-            len(to_delete_revisions), delete_strategy.expected_freed_size_str))
+        print("Success!")
+        return
