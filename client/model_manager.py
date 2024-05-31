@@ -35,8 +35,11 @@ class ModelManager:
                                        endpoint=endpoint)
                 return True, path
             except Exception as e:
-                logging.error("Exception: {e}")
+                logging.error("Exception: {}".format(e))
                 return False, None
+
+        if not file_name:
+            raise ValueError("Current not support download full repo, file name must be provided!")
 
         _, avails = await self.search_model(repo_id, file_name, revision)
 
