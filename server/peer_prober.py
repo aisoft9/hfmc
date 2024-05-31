@@ -1,6 +1,7 @@
 
 import asyncio
 import heapq
+import logging
 from common.peer import Peer
 from client.http_client import ping
 
@@ -33,7 +34,7 @@ class PeerProber:
             heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
 
         if len(self._probe_heap) == 0:
-            print("No peers configured to probe")
+            logging.warning("No peers configured to probe")
 
         def probe_cb(task):
             try:

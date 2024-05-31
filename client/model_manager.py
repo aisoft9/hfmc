@@ -3,6 +3,7 @@
 
 import os
 import sys
+import logging
 
 from prettytable import PrettyTable
 from huggingface_hub import scan_cache_dir, hf_hub_download, DeleteCacheStrategy
@@ -34,7 +35,7 @@ class ModelManager:
                                        endpoint=endpoint)
                 return True, path
             except Exception as e:
-                print(e)
+                logging.error("Exception:", e)
                 return False, None
 
         _, avails = await self.search_model(repo_id, file_name, revision)
@@ -42,24 +43,24 @@ class ModelManager:
         for peer in avails:
             done, path = do_download(f"http://{peer.ip}:{peer.port}")
             if done:
-                print(path)
+                logging.info('Download successfully:', path)
                 return
 
-        print("Cannot download from peers; try mirror sites")
+        logging.info("Cannot download from peers; try mirror sites")
 
         done, path = do_download("https://hf-mirror.com")
         if done:
-            print(path)
+            logging.info('Download successfully:', path)
             return
 
-        print("Cannot download from mirror site; try hf.co")
+        logging.info("Cannot download from mirror site; try hf.co")
 
         done, path = do_download("https://huggingface.co")
         if done:
-            print(path)
+            logging.info('Download successfully:', path)
             return
 
-        print("Cannot find target model in hf.co; double check the model info")
+        logging.info("Cannot find target model in hf.co; double check the model info")
 
     def ls(self, repo_id):
         hf_cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
@@ -91,6 +92,7 @@ class ModelManager:
                    hf_cache_info.repos),
             key=lambda repo: repo.repo_id)
         )
+        # Print the table to stdout
         print(hf_cache_info_table)
 
     def rm(self, repo_id, revision, file_name):
@@ -162,15 +164,15 @@ class ModelManager:
         show_delete_path.extend(to_delete_refs_path)
         show_delete_path.extend(to_delete_revs_path)
         show_delete_path.extend(to_delete_blobs_path)
-        print("")
+        logging.info("Will delete the following files:")
 
         for p in show_delete_path:
-            print(p)
+            logging.info(p)
 
         confirm = input("\nWARNING: files or dirs will be delete! Enter [y/Y] to confirm: ")
 
         if confirm.strip() not in ["y", "Y"]:
-            print("Cancel delete!")
+            logging.info("Cancel delete!")
             return
 
         delete_strategy = DeleteCacheStrategy(expected_freed_size=0,
@@ -180,5 +182,5 @@ class ModelManager:
                                               snapshots=frozenset(to_delete_revs_path))
 
         delete_strategy.execute()
-        print("Success!")
+        logging.info("Delete success!")
         return

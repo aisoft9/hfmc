@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import sys
+import logging
 
 from client import http_client
 from common.peer import Peer
@@ -10,6 +11,7 @@ from client.model_manager import ModelManager
 from client.peer_manager import PeerManager
 from server import http_server
 
+logger = logging.getLogger(__name__)
 
 def peer_cmd(args):
     with PeerStore() as store:
@@ -46,7 +48,7 @@ async def daemon_cmd(args):
         await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
         await http_client.stop_server()
-        print("HFFS daemon stopped!")
+        logging.info("HFFS daemon stopped!")
 
 
 async def exec_cmd(args, parser):
@@ -107,12 +109,14 @@ def arg_parser():
 
 
 async def main():
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    
     args, parser = arg_parser()
 
     try:
         await asyncio.gather(exec_cmd(args, parser))
     except Exception as e:
-        print("{}".format(e), file=sys.stderr)
+        logging.error("Exception: {}".format(e))
         exit(1)
 
 
@@ -120,4 +124,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt or asyncio.exceptions.CancelledError:
-        print("Server shut down ...")
+        logging.info("Server shut down ...")

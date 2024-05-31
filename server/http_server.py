@@ -1,5 +1,6 @@
 import asyncio
 import os
+import logging
 
 from aiohttp import web
 from aiohttp import streamer
@@ -40,7 +41,7 @@ async def download_file(request):
     cached = file_in_cache(repo_id, file_name, revision)
 
     if not cached:
-        print("download 404 not cached")
+        logging.error("download 404 not cached")
         return web.Response(
             body=f'File <{file_name}> is not cached',
             status=404)
@@ -50,13 +51,13 @@ async def download_file(request):
     file_path = cached["file_path"]
 
     if not os.path.exists(file_path):
-        print("download 404 not exist")
+        logging.error("download 404 not exist")
         return web.Response(
             body=f'File <{file_path}> does not exist',
             status=404
         )
 
-    print("download 200")
+    logging.debug("download 200")
     return web.Response(
         body=file_sender(file_path=file_path),
         headers=headers
@@ -64,7 +65,7 @@ async def download_file(request):
 
 
 async def pong(_):
-    # print(f"[SERVER] seq={_.query['seq']}")
+    # logging.debug(f"[SERVER] seq={_.query['seq']}")
     return web.Response(text='pong')
 
 
@@ -87,7 +88,7 @@ async def search_model(request):
             "Content-Length": str(cached["size"]),
             "Location": str(request.url),
         }
-        print(f"search_model: {headers}")
+        logging.debug(f"search_model: {headers}")
         return web.Response(status=200, headers=headers)
 
 
@@ -95,7 +96,7 @@ async def start_server(port):
     peers = []
     with PeerStore() as peer_store:
         peers = peer_store.get_peers()
-        
+
     # set up context before starting the server
     peer_prober = PeerProber(peers)
     ctx_var_peer_prober.set(peer_prober)
@@ -122,7 +123,7 @@ async def start_server(port):
     # start peer prober to run in the background
     asyncio.create_task(peer_prober.start_probe())
 
-    print(f"HFFS daemon started at port {port}!")
+    logging.info(f"HFFS daemon started at port {port}!")
 
     # keep the server running
     while True:

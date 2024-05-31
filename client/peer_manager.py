@@ -1,6 +1,6 @@
 from typing import List
 from common.peer import Peer
-
+import logging
 
 class PeerManager:
     DEFAULT_PORT = 8000
@@ -20,6 +20,6 @@ class PeerManager:
         return self._peer_store.get_peers()
 
     def list_peers(self):
-        print("List of peers:")
+        logging.info("List of peers:")
         for peer in self.get_peers():
-            print(f"{peer.ip}:{peer.port}")
+            logging.info(f"{peer.ip}:{peer.port}")
