@@ -112,12 +112,12 @@ async def main():
     try:
         await asyncio.gather(exec_cmd(args, parser))
     except Exception as e:
-        print("{}".format(e), file=sys.stderr, end="")
+        print("{}".format(e), file=sys.stderr)
         exit(1)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
+    except KeyboardInterrupt or asyncio.exceptions.CancelledError:
         print("Server shut down ...")

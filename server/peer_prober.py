@@ -6,8 +6,8 @@ from client.http_client import ping
 
 
 class PeerProber:
-    def __init__(self, peer_store):
-        self._peer_store = peer_store
+    def __init__(self, peers):
+        self._peers = peers
         self._actives = set()
         self._probe_heap = []
         self._probing = False
@@ -29,20 +29,23 @@ class PeerProber:
         self._probing = True
 
         # Initialize the heap with the peers, sorted by their epoch
-        for peer in self._peer_store.get_peers():
+        for peer in self._peers:
             heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
 
         if len(self._probe_heap) == 0:
             print("No peers configured to probe")
 
         def probe_cb(task):
-            peer = task.result()
-            if isinstance(peer, Peer):
-                heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
-                if peer.is_alive():
-                    self._actives.add(peer)
-                else:
-                    self._actives.discard(peer)
+            try:
+                peer = task.result()
+                if isinstance(peer, Peer):
+                    heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
+                    if peer.is_alive():
+                        self._actives.add(peer)
+                    else:
+                        self._actives.discard(peer)
+            except asyncio.exceptions.CancelledError:
+                print("probing is canceled")
 
         while self._probing:
             await asyncio.sleep(3)
