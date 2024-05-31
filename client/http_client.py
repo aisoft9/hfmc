@@ -14,7 +14,7 @@ async def ping(peer):
     alive = False
     seq = os.urandom(4).hex()
 
-    logging.debug("[CLIENT]: probing", peer.ip, peer.port, seq)
+    logging.debug(f"[CLIENT]: probing {peer.ip}:{peer.port}, seq = {seq}")
 
     try:
         async with aiohttp.ClientSession() as session:

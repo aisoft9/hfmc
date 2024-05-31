@@ -35,7 +35,7 @@ class ModelManager:
                                        endpoint=endpoint)
                 return True, path
             except Exception as e:
-                logging.error("Exception:", e)
+                logging.error("Exception: {e}")
                 return False, None
 
         _, avails = await self.search_model(repo_id, file_name, revision)
@@ -43,21 +43,21 @@ class ModelManager:
         for peer in avails:
             done, path = do_download(f"http://{peer.ip}:{peer.port}")
             if done:
-                logging.info('Download successfully:', path)
+                logging.info("Download successfully: {path}")
                 return
 
         logging.info("Cannot download from peers; try mirror sites")
 
         done, path = do_download("https://hf-mirror.com")
         if done:
-            logging.info('Download successfully:', path)
+            logging.info("Download successfully: {path}")
             return
 
         logging.info("Cannot download from mirror site; try hf.co")
 
         done, path = do_download("https://huggingface.co")
         if done:
-            logging.info('Download successfully:', path)
+            logging.info("Download successfully: {path}")
             return
 
         logging.info("Cannot find target model in hf.co; double check the model info")
