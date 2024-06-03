@@ -61,7 +61,8 @@ async def exec_cmd(args, parser):
             await daemon_cmd(args)
         else:
             raise ValueError("Invalid command")
-    except ValueError:
+    except ValueError as e:
+        print("{}".format(e))
         parser.print_usage()
 
 
@@ -98,7 +99,7 @@ def arg_parser():
     model_add_parser.add_argument('--file')
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--revision', type=str, default="main")
+    model_rm_parser.add_argument('--revision')
     model_rm_parser.add_argument('--file')
     model_search_parser = model_subparsers.add_parser('search')
     model_search_parser.add_argument('repo_id')

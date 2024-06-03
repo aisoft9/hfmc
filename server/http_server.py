@@ -106,13 +106,13 @@ async def start_server(port):
 
     # HEAD requests
     app.router.add_head(
-        '/{user}/{model}/resolve/{revision}/{file_name}', search_model)
+        '/{user}/{model}/resolve/{revision}/{file_name:.*}', search_model)
 
     # GET requests
     app.router.add_get('/ping', pong)
     app.router.add_get('/alive_peers', alive_peers)
     app.router.add_get(
-        '/{user}/{model}/resolve/{revision}/{file_name}', download_file)
+        '/{user}/{model}/resolve/{revision}/{file_name:.*}', download_file)
 
     # start web server
     runner = web.AppRunner(app)
