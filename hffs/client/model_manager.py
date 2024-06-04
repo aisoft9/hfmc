@@ -7,8 +7,8 @@ import logging
 
 from prettytable import PrettyTable
 from huggingface_hub import scan_cache_dir, hf_hub_download, DeleteCacheStrategy
-from client import http_client
-from common.settings import HFFS_MODEL_DIR
+from . import http_client
+from ..common.settings import HFFS_MODEL_DIR
 
 
 def get_path_in_snapshot(repo_path, commit_hash, file_path):

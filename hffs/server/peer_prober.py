@@ -2,8 +2,8 @@
 import asyncio
 import heapq
 import logging
-from common.peer import Peer
-from client.http_client import ping
+from ..common.peer import Peer
+from ..client.http_client import ping
 
 
 class PeerProber:

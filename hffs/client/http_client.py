@@ -1,13 +1,12 @@
 import asyncio
 import time
-import aiohttp
 import os
 
 import aiohttp
 import aiohttp.client_exceptions
 import logging
 
-from common.peer import Peer
+from ..common.peer import Peer
 
 
 async def ping(peer):

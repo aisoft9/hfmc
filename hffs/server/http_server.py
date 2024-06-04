@@ -6,9 +6,9 @@ from aiohttp import web
 from aiohttp import streamer
 from contextvars import ContextVar
 
-from common.peer_store import PeerStore
-from server.peer_prober import PeerProber
-from common.hf_adapter import file_in_cache
+from ..common.peer_store import PeerStore
+from .peer_prober import PeerProber
+from ..common.hf_adapter import file_in_cache
 import huggingface_hub as hf
 
 ctx_var_peer_prober = ContextVar("PeerProber")

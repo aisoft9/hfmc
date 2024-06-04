@@ -1,6 +1,6 @@
 import os
-from common.peer import Peer
-from common.settings import HFFS_HOME, HFFS_PEER_CONF
+from .peer import Peer
+from .settings import HFFS_HOME, HFFS_PEER_CONF
 import logging
 
 def create_file():

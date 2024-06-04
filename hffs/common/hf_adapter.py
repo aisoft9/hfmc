@@ -1,6 +1,6 @@
 import os
 import huggingface_hub as hf
-from common import settings
+from . import settings
 
 
 def get_sym_path(repo_path, commit_hash, file_path):

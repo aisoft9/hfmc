@@ -4,12 +4,11 @@ import asyncio
 import sys
 import logging
 
-from client import http_client
-from common.peer import Peer
-from common.peer_store import PeerStore
-from client.model_manager import ModelManager
-from client.peer_manager import PeerManager
-from server import http_server
+from .client import http_client
+from .common.peer_store import PeerStore
+from .client.model_manager import ModelManager
+from .client.peer_manager import PeerManager
+from .server import http_server
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +108,7 @@ def arg_parser():
     return parser.parse_args(), parser
 
 
-async def main():
+async def async_main():
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     
     args, parser = arg_parser()
@@ -121,8 +120,12 @@ async def main():
         exit(1)
 
 
-if __name__ == "__main__":
+def main():
     try:
-        asyncio.run(main())
+        asyncio.run(async_main())
     except KeyboardInterrupt or asyncio.exceptions.CancelledError:
         logging.info("Server shut down ...")
+
+
+if __name__ == "__main__":
+    main()

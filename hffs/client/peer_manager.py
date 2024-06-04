@@ -1,5 +1,5 @@
 from typing import List
-from common.peer import Peer
+from ..common.peer import Peer
 import logging
 
 class PeerManager:
