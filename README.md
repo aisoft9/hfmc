@@ -19,15 +19,15 @@ HFFS 的典型使用场景有：
    pip3.12 install hffs-0.0.1-py3-none-any.whl
    ```
 
-2.  启动服务
+2. 启动服务
 
    ```bash
-   hffs start
+   hffs daemon start
    ```
 
 3. 执行操作(新起一个终端窗口)
 
-   ```	bash
+   ```bash
    hffs model ls
    ```
 
@@ -39,7 +39,7 @@ HFFS 的典型使用场景有：
 
 ```bash
 
-hffs start
+hffs daemon start
 
 ```
 
@@ -49,7 +49,7 @@ hffs start
 
 ```bash
 
-hffs stop [--destroy-cache]
+hffs daemon stop [--destroy-cache]
 
 ```
 
