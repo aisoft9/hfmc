@@ -40,7 +40,7 @@ async def alive_peers():
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
                 else:
-                    logging.error("Failed to get alive peers, status code: {response.status}")
+                    logging.error(f"Failed to get alive peers, status code: {response.status}")
                 return peers
     except aiohttp.client_exceptions.ClientConnectionError:
         logging.error("Make sure the HFFS service is up by running: python hffs.py start")

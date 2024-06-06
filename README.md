@@ -11,6 +11,26 @@ HFFS 的典型使用场景有：
 
 下面是 HFFS 所提供的命令行文档。看看它们是如何帮助用户访问模型文件的吧。
 
+# 快速开始
+
+1. 安装
+
+   ```bash
+   pip3.12 install hffs-0.0.1-py3-none-any.whl
+   ```
+
+2.  启动服务
+
+   ```bash
+   hffs start
+   ```
+
+3. 执行操作(新起一个终端窗口)
+
+   ```	bash
+   hffs model ls
+   ```
+
 # HFFS 的命令行
 
 ## HFFS 服务管理
