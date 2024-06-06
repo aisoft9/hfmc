@@ -15,7 +15,7 @@ setup(name='hffs',
       long_description=open("README.md", "r").read(),
       long_description_content_type="text/markdown",
       classifiers=["Topic :: Software Development", "Development Status :: 3 - Alpha",
-                   "Programming Language :: Python :: 3.8"],
+                   "Programming Language :: Python :: 3.11"],
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='hffs python hugging face download accelerate',
       author='9#',
@@ -26,7 +26,7 @@ setup(name='hffs',
       include_package_data=True,
       zip_safe=True,
       install_requires=open('requirements.txt', 'r') .read().splitlines(),
-      python_requires=">=3.8",
+      python_requires=">=3.11",
       entry_points={
           'console_scripts': [
               'hffs = hffs.hffs:main'

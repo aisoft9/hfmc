@@ -126,6 +126,3 @@ def main():
     except KeyboardInterrupt or asyncio.exceptions.CancelledError:
         logging.info("Server shut down ...")
 
-
-if __name__ == "__main__":
-    main()

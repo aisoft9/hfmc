@@ -46,21 +46,21 @@ class ModelManager:
         for peer in avails:
             done, path = do_download(f"http://{peer.ip}:{peer.port}")
             if done:
-                logging.info("Download successfully: {path}")
+                logging.info(f"Download successfully: {path}")
                 return
 
         logging.info("Cannot download from peers; try mirror sites")
 
         done, path = do_download("https://hf-mirror.com")
         if done:
-            logging.info("Download successfully: {path}")
+            logging.info(f"Download successfully: {path}")
             return
 
         logging.info("Cannot download from mirror site; try hf.co")
 
         done, path = do_download("https://huggingface.co")
         if done:
-            logging.info("Download successfully: {path}")
+            logging.info(f"Download successfully: {path}")
             return
 
         logging.info("Cannot find target model in hf.co; double check the model info")
