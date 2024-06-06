@@ -1,6 +1,8 @@
 import asyncio
 import os
 import logging
+import sys
+import re
 
 from aiohttp import web
 from aiohttp import streamer
@@ -24,19 +26,60 @@ def extract_model_info(request):
 
 
 @streamer
-async def file_sender(writer, file_path=None):
+async def file_sender(writer, file_path=None, file_range=()):
     """
     This function will read large file chunk by chunk and send it through HTTP
     without reading them into memory
     """
+    file_start, file_end = file_range
+
     with open(file_path, 'rb') as f:
-        chunk = f.read(2 ** 16)
-        while chunk:
-            await writer.write(chunk)
-            chunk = f.read(2 ** 16)
+        if file_start is not None:
+            f.seek(file_start)
+
+        buf_size = 2 ** 18
+
+        while True:
+            to_read = min(buf_size, file_end + 1 - f.tell() if file_end else buf_size)
+            buf = f.read(to_read)
+
+            if not buf:
+                break
+
+            await writer.write(buf)
 
 
 async def download_file(request):
+
+    def parse_byte_range(byte_range):
+        """Returns the two numbers in 'bytes=123-456' or throws ValueError.
+
+        The last number or both numbers may be None.
+        """
+        byte_range_re = re.compile(r'bytes=(\d+)-(\d+)?$')
+
+        if not byte_range or byte_range.strip() == '':
+            return None, None
+
+        m = byte_range_re.match(byte_range)
+
+        if not m:
+            raise ValueError('Invalid byte range %s' % byte_range)
+
+        first, last = [x and int(x) for x in m.groups()]
+
+        if last and last < first:
+            raise ValueError('Invalid byte range %s' % byte_range)
+
+        return first, last
+
+    try:
+        file_start, file_end = parse_byte_range(request.headers.get("Range"))
+    except Exception as e:
+        err_msg = "Invalid file range! ERROR: {}".format(e)
+        logging.warning(err_msg)
+        return web.Response(body=err_msg, status=400)
+
     repo_id, file_name, revision = extract_model_info(request)
     cached = file_in_cache(repo_id, file_name, revision)
 
@@ -59,7 +102,7 @@ async def download_file(request):
 
     logging.debug("download 200")
     return web.Response(
-        body=file_sender(file_path=file_path),
+        body=file_sender(file_path=file_path, file_range=(file_start, file_end)),
         headers=headers
     )
 
