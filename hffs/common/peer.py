@@ -27,6 +27,16 @@ class Peer:
     def get_epoch(self):
         return self._epoch
 
+    def __lt__(self, value):
+        if not isinstance(value, Peer):
+            raise TypeError()
+        if self.ip < value.ip:
+            return True
+        elif self.port < value.port:
+            return True
+        else:
+            return False
+
     def __eq__(self, value: object) -> bool:
         return isinstance(value, Peer) and self.ip == value.ip and self.port == value.port
 

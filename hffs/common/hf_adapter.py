@@ -1,10 +1,10 @@
 import os
 import huggingface_hub as hf
-from common import settings
+from . import settings
 
 
 def get_sym_path(repo_path, commit_hash, file_path):
-    return f"{repo_path}/snapshots/{commit_hash}/{file_path}"
+    return os.path.normpath(f"{repo_path}/snapshots/{commit_hash}/{file_path}")
 
 
 def file_in_cache(repo_id, file_name, revision="main"):
@@ -38,8 +38,10 @@ def file_in_cache(repo_id, file_name, revision="main"):
     etag = None
     size = None
     file_path = None
+    sym_path = get_sym_path(repo_path, commit_hash, file_name)
+
     for f in rev_info.files:
-        if os.path.normpath(get_sym_path(repo_path, commit_hash, file_name)) == str(f.file_path):
+        if sym_path == str(f.file_path):
             size = f.size_on_disk
             etag = os.path.basename(os.path.normpath(f.blob_path))
             file_path = f.file_path

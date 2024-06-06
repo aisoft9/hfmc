@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 import argparse
 import asyncio
+import sys
+import logging
 
-from client import http_client
-from common.peer import Peer
-from common.peer_store import PeerStore
-from client.model_manager import ModelManager
-from client.peer_manager import PeerManager
-from server import http_server
+from .client import http_client
+from .common.peer_store import PeerStore
+from .client.model_manager import ModelManager
+from .client.peer_manager import PeerManager
+from .server import http_server
 
+logger = logging.getLogger(__name__)
 
 def peer_cmd(args):
     with PeerStore() as store:
@@ -35,8 +37,7 @@ async def model_cmd(args):
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":
-        model_manager.rm(args.repo_id, branch=args.revision,
-                         revision=args.revision)
+        model_manager.rm(args.repo_id, revision=args.revision, file_name=args.file)
     else:
         raise ValueError("Invalid subcommand")
 
@@ -46,7 +47,7 @@ async def daemon_cmd(args):
         await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
         await http_client.stop_server()
-        print("HFFS daemon stopped!")
+        logging.info("HFFS daemon stopped!")
 
 
 async def exec_cmd(args, parser):
@@ -59,7 +60,8 @@ async def exec_cmd(args, parser):
             await daemon_cmd(args)
         else:
             raise ValueError("Invalid command")
-    except ValueError:
+    except ValueError as e:
+        print("{}".format(e))
         parser.print_usage()
 
 
@@ -96,7 +98,7 @@ def arg_parser():
     model_add_parser.add_argument('--file')
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--revision', type=str, default="main")
+    model_rm_parser.add_argument('--revision')
     model_rm_parser.add_argument('--file')
     model_search_parser = model_subparsers.add_parser('search')
     model_search_parser.add_argument('repo_id')
@@ -106,12 +108,24 @@ def arg_parser():
     return parser.parse_args(), parser
 
 
-async def main():
+async def async_main():
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    
     args, parser = arg_parser()
-    await exec_cmd(args, parser)
+
+    try:
+        await asyncio.gather(exec_cmd(args, parser))
+    except Exception as e:
+        logging.error("Exception: {}".format(e))
+        exit(1)
+
+
+def main():
+    try:
+        asyncio.run(async_main())
+    except KeyboardInterrupt or asyncio.exceptions.CancelledError:
+        logging.info("Server shut down ...")
+
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Server shut down ...")
+    main()

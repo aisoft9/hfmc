@@ -1,19 +1,19 @@
 import asyncio
 import time
-import aiohttp
 import os
 
 import aiohttp
 import aiohttp.client_exceptions
+import logging
 
-from common.peer import Peer
+from ..common.peer import Peer
 
 
 async def ping(peer):
     alive = False
     seq = os.urandom(4).hex()
 
-    print("[CLIENT]: probing", peer.ip, peer.port, seq)
+    logging.debug(f"[CLIENT]: probing {peer.ip}:{peer.port}, seq = {seq}")
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -21,13 +21,13 @@ async def ping(peer):
                 if response.status == 200:
                     alive = True
     except Exception as e:
-        print(e)
+        logging.warning(e)
 
     peer.set_alive(alive)
     peer.set_epoch(int(time.time()))
 
     status_msg = "alive" if alive else "dead"
-    print(f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
+    logging.debug(f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
     return peer
 
 
@@ -40,11 +40,10 @@ async def alive_peers():
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
                 else:
-                    print(
-                        "Failed to get alive peers, status code: {response.status}")
+                    logging.error("Failed to get alive peers, status code: {response.status}")
                 return peers
     except aiohttp.client_exceptions.ClientConnectionError:
-        print("Make sure the HFFS service is up by running: python hffs.py start")
+        logging.error("Make sure the HFFS service is up by running: python hffs.py start")
         return peers
 
 
@@ -98,16 +97,16 @@ async def do_search(peers, repo_id, revision, file_name):
 
 async def search_model(peers, repo_id, file_name, revision):
     if not peers:
-        print("No active peers to search")
+        logging.info("No active peers to search")
         return []
 
-    print("Will check the following peers:")
-    print(Peer.print_peers(peers))
+    logging.info("Will check the following peers:")
+    logging.info(Peer.print_peers(peers))
 
     avails = await do_search(peers, repo_id, revision, file_name)
 
-    print("Peers who have the model:")
-    print(Peer.print_peers(avails))
+    logging.info("Peers who have the model:")
+    logging.info(Peer.print_peers(avails))
 
     return avails
 
