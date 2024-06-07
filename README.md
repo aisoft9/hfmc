@@ -19,16 +19,22 @@ HFFS 的典型使用场景有：
    pip3.11 install hffs-0.0.1-py3-none-any.whl
    ```
 
+2. 添加加速节点(局域网内共享模型文件的其他主机IP)
+
+   ```bash
+   hffs peer add 192.168.0.2
+   ```
+
 2. 启动服务
 
    ```bash
    hffs daemon start
    ```
 
-3. 执行操作(新起一个终端窗口)
+3. 下载模型文件(新起一个终端窗口)
 
    ```bash
-   hffs model ls
+   hffs model add google/timesfm-1.0-200m --file=README.md
    ```
 
 # HFFS 的命令行
