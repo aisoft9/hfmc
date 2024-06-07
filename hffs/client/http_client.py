@@ -7,6 +7,8 @@ import aiohttp.client_exceptions
 import logging
 
 from ..common.peer import Peer
+from huggingface_hub import hf_hub_url
+from huggingface_hub.constants import HUGGINGFACE_HEADER_X_LINKED_ETAG
 
 
 async def ping(peer):
@@ -27,7 +29,8 @@ async def ping(peer):
     peer.set_epoch(int(time.time()))
 
     status_msg = "alive" if alive else "dead"
-    logging.debug(f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
+    logging.debug(
+        f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
     return peer
 
 
@@ -40,10 +43,12 @@ async def alive_peers():
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
                 else:
-                    logging.error(f"Failed to get alive peers, status code: {response.status}")
+                    logging.error(
+                        f"Failed to get alive peers, status code: {response.status}")
                 return peers
     except aiohttp.client_exceptions.ClientConnectionError:
-        logging.error("Make sure the HFFS service is up by running: python hffs.py start")
+        logging.error(
+            "Make sure the HFFS service is up by running: python hffs.py start")
         return peers
 
 
@@ -109,6 +114,20 @@ async def search_model(peers, repo_id, file_name, revision):
     logging.info(Peer.print_peers(avails))
 
     return avails
+
+
+async def get_model_etag(endpoint, repo_id, filename, revision='main'):
+    url = hf_hub_url(
+        repo_id=repo_id,
+        filename=filename,
+        revision=revision,
+        endpoint=endpoint
+    )
+
+    async with aiohttp.ClientSession() as session:
+        async with session.head(url) as response:
+            etag = response.headers.get("ETag") or response.headers.get(HUGGINGFACE_HEADER_X_LINKED_ETAG)
+            return etag.strip('"')
 
 
 async def stop_server():

@@ -56,3 +56,41 @@ def file_in_cache(repo_id, file_name, revision="main"):
         "size": size,
         "file_path": file_path
     }
+
+
+def get_etag_path(repo_id, filename, revision="main"):
+    model_path = hf.try_to_load_from_cache(
+        repo_id=repo_id,
+        filename=filename,
+        cache_dir=settings.HFFS_MODEL_DIR,
+        revision=revision,
+    )
+
+    if model_path == hf._CACHED_NO_EXIST:
+        return None
+
+    file_path = os.path.relpath(model_path, settings.HFFS_MODEL_DIR)
+    return os.path.join(settings.HFFS_ETAG_DIR, file_path)
+
+
+def try_to_load_etag(repo_id, filename, revision="main"):
+    etag_path = get_etag_path(repo_id, filename, revision)
+
+    if not etag_path or not os.path.exists(etag_path):
+        return None
+
+    with open(etag_path, "r") as f:
+        return f.read().strip()
+
+
+def save_etag(etag, repo_id, filename, revision="main"):
+    etag_path = get_etag_path(repo_id, filename, revision)
+
+    if not etag_path:
+        raise ValueError(
+            f"Failed to get etag path for repo={repo_id}, file={filename}, revision={revision}")
+
+    os.makedirs(os.path.dirname(etag_path), exist_ok=True)
+
+    with open(etag_path, "w+") as f:
+        f.write(etag)

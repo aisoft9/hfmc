@@ -1,7 +1,6 @@
 import asyncio
 import os
 import logging
-import sys
 import re
 
 from aiohttp import web
@@ -10,7 +9,7 @@ from contextvars import ContextVar
 
 from ..common.peer_store import PeerStore
 from .peer_prober import PeerProber
-from ..common.hf_adapter import file_in_cache
+from ..common.hf_adapter import file_in_cache, try_to_load_etag
 import huggingface_hub as hf
 
 ctx_var_peer_prober = ContextVar("PeerProber")
@@ -40,7 +39,8 @@ async def file_sender(writer, file_path=None, file_range=()):
         buf_size = 2 ** 18
 
         while True:
-            to_read = min(buf_size, file_end + 1 - f.tell() if file_end else buf_size)
+            to_read = min(buf_size, file_end + 1 - f.tell()
+                          if file_end else buf_size)
             buf = f.read(to_read)
 
             if not buf:
@@ -102,7 +102,8 @@ async def download_file(request):
 
     logging.debug("download 200")
     return web.Response(
-        body=file_sender(file_path=file_path, file_range=(file_start, file_end)),
+        body=file_sender(file_path=file_path,
+                         file_range=(file_start, file_end)),
         headers=headers
     )
 
@@ -125,9 +126,10 @@ async def search_model(request):
     if not cached:
         return web.Response(status=404)
     else:
+        etag = cached["etag"] or try_to_load_etag(repo_id, file_name, revision)
         headers = {
             hf.constants.HUGGINGFACE_HEADER_X_REPO_COMMIT: cached["commit_hash"],
-            "ETag": cached["etag"],
+            "ETag": etag,
             "Content-Length": str(cached["size"]),
             "Location": str(request.url),
         }
