@@ -43,7 +43,7 @@ def file_in_cache(repo_id, file_name, revision="main"):
     for f in rev_info.files:
         if sym_path == str(f.file_path):
             size = f.size_on_disk
-            etag = os.path.basename(os.path.normpath(f.blob_path))
+            etag = try_to_load_etag(repo_id, file_name, revision)
             file_path = f.file_path
             break
 

@@ -7,7 +7,7 @@ import aiohttp.client_exceptions
 import logging
 
 from ..common.peer import Peer
-from huggingface_hub import hf_hub_url
+from huggingface_hub import hf_hub_url, get_hf_file_metadata
 from huggingface_hub.constants import HUGGINGFACE_HEADER_X_LINKED_ETAG
 
 
@@ -124,10 +124,8 @@ async def get_model_etag(endpoint, repo_id, filename, revision='main'):
         endpoint=endpoint
     )
 
-    async with aiohttp.ClientSession() as session:
-        async with session.head(url) as response:
-            etag = response.headers.get("ETag") or response.headers.get(HUGGINGFACE_HEADER_X_LINKED_ETAG)
-            return etag.strip('"')
+    metadata = get_hf_file_metadata(url)
+    return metadata.etag
 
 
 async def stop_server():

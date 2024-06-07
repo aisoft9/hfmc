@@ -126,10 +126,9 @@ async def search_model(request):
     if not cached:
         return web.Response(status=404)
     else:
-        etag = cached["etag"] or try_to_load_etag(repo_id, file_name, revision)
         headers = {
             hf.constants.HUGGINGFACE_HEADER_X_REPO_COMMIT: cached["commit_hash"],
-            "ETag": etag,
+            "ETag": cached["etag"],
             "Content-Length": str(cached["size"]),
             "Location": str(request.url),
         }
