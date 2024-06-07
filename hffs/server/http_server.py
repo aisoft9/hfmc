@@ -11,6 +11,7 @@ from ..common.peer_store import PeerStore
 from .peer_prober import PeerProber
 from ..common.hf_adapter import file_in_cache, try_to_load_etag
 import huggingface_hub as hf
+from ..common.settings import save_local_service_port
 
 ctx_var_peer_prober = ContextVar("PeerProber")
 
@@ -166,6 +167,7 @@ async def start_server(port):
 
     # start peer prober to run in the background
     asyncio.create_task(peer_prober.start_probe())
+    save_local_service_port(port)
 
     logging.info(f"HFFS daemon started at port {port}!")
 

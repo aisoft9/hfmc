@@ -16,7 +16,7 @@ HFFS 的典型使用场景有：
 1. 安装
 
    ```bash
-   pip3.12 install hffs-0.0.1-py3-none-any.whl
+   pip3.11 install hffs-0.0.1-py3-none-any.whl
    ```
 
 2. 启动服务

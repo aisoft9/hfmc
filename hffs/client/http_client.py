@@ -9,7 +9,7 @@ import logging
 from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
 from huggingface_hub.constants import HUGGINGFACE_HEADER_X_LINKED_ETAG
-
+from ..common.settings import load_local_service_port
 
 async def ping(peer):
     alive = False
@@ -35,10 +35,11 @@ async def ping(peer):
 
 
 async def alive_peers():
+    local_service_port = load_local_service_port()
     peers = []
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("http://127.0.0.1:8000/alive_peers") as response:
+            async with session.get(f"http://127.0.0.1:{local_service_port}/alive_peers") as response:
                 if response.status == 200:
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
