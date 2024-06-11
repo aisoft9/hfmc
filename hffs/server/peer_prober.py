@@ -10,11 +10,26 @@ class PeerProber:
     def __init__(self, peers):
         self._peers = peers
         self._actives = set()
+        self._updates = None
         self._probe_heap = []
         self._probing = False
 
     def get_actives(self):
         return list(self._actives)
+
+    def update_peers(self, peers):
+        self._updates = set(peers)
+
+    def _reset_peer_heap(self):
+        self._probe_heap = []
+        for peer in self._peers:
+            heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
+
+    def _do_update_peers(self):
+        if self._updates:
+            self._peers = self._updates
+            self._updates = None
+            self._reset_peer_heap()
 
     async def start_probe(self):
         """Start probing peers for liveness.
@@ -30,8 +45,7 @@ class PeerProber:
         self._probing = True
 
         # Initialize the heap with the peers, sorted by their epoch
-        for peer in self._peers:
-            heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
+        self._reset_peer_heap()
 
         if len(self._probe_heap) == 0:
             logging.warning("No peers configured to probe")
@@ -50,6 +64,8 @@ class PeerProber:
 
         while self._probing:
             await asyncio.sleep(3)
+
+            self._do_update_peers()
 
             if len(self._probe_heap) == 0:
                 continue

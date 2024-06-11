@@ -12,6 +12,11 @@ HFFS_ETAG_DIR = os.path.join(HFFS_HOME, "etags")
 HFFS_CONF = os.path.join(HFFS_HOME, "hffs.conf")
 
 
+HFFS_API_PING = "/hffs_api/ping"
+HFFS_API_ALIVE_PEERS = "/hffs_api/alive_peers"
+HFFS_API_PEER_CHANGE = "/hffs_api/peer_change"
+
+
 def save_local_service_port(port):
     config = configparser.ConfigParser()
     config["DEFAULT"] = {"SERVICE_PORT": str(port)}

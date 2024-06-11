@@ -8,18 +8,25 @@ import logging
 
 from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
-from huggingface_hub.constants import HUGGINGFACE_HEADER_X_LINKED_ETAG
-from ..common.settings import load_local_service_port
+from ..common.settings import load_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 
-async def ping(peer):
+LOCAL_HOST = "127.0.0.1"
+
+
+def timeout_sess(timeout=60):
+    return aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout))
+
+
+async def ping(peer, timeout=15):
     alive = False
     seq = os.urandom(4).hex()
+    url = f"http://{peer.ip}:{peer.port}" + HFFS_API_PING + f"?seq={seq}"
 
     logging.debug(f"[CLIENT]: probing {peer.ip}:{peer.port}, seq = {seq}")
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://{peer.ip}:{peer.port}/ping?seq={seq}") as response:
+        async with timeout_sess(timeout) as session:
+            async with session.get(url) as response:
                 if response.status == 200:
                     alive = True
     except Exception as e:
@@ -34,12 +41,14 @@ async def ping(peer):
     return peer
 
 
-async def alive_peers():
-    local_service_port = load_local_service_port()
+async def alive_peers(timeout=2):
+    port = load_local_service_port()
+    url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_ALIVE_PEERS
     peers = []
+
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://127.0.0.1:{local_service_port}/alive_peers") as response:
+        async with timeout_sess(timeout) as session:
+            async with session.get(url) as response:
                 if response.status == 200:
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
@@ -67,7 +76,7 @@ async def search_coro(peer, repo_id, revision, file_name):
         Peer or None: if the peer has the target file, return the peer, otherwise None
     """
     try:
-        async with aiohttp.ClientSession() as session:
+        async with timeout_sess() as session:
             async with session.head(f"http://{peer.ip}:{peer.port}/{repo_id}/resolve/{revision}/{file_name}") as response:
                 if response.status == 200:
                     return peer
@@ -127,6 +136,22 @@ async def get_model_etag(endpoint, repo_id, filename, revision='main'):
 
     metadata = get_hf_file_metadata(url)
     return metadata.etag
+
+
+async def notify_peer_change(timeout=2):
+    try:
+        port = load_local_service_port()
+    except LookupError:
+        return
+
+    url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_PEER_CHANGE
+
+    try:
+        async with timeout_sess(timeout) as session:
+            async with session.get(url) as response:
+                logging.debug(f"Peer change http status: {response.status}")
+    except Exception as e:
+        logging.debug(f"Peer change error: {e}")
 
 
 async def stop_server():
