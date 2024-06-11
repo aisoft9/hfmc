@@ -124,6 +124,6 @@ async def async_main():
 def main():
     try:
         asyncio.run(async_main())
-    except KeyboardInterrupt or asyncio.exceptions.CancelledError:
+    except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
         logging.info("Server shut down ...")
 
