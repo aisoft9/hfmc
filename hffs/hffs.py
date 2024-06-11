@@ -12,7 +12,8 @@ from .server import http_server
 
 logger = logging.getLogger(__name__)
 
-def peer_cmd(args):
+
+async def peer_cmd(args):
     with PeerStore() as store:
         peer_manager = PeerManager(store)
 
@@ -24,6 +25,9 @@ def peer_cmd(args):
             peer_manager.list_peers()
         else:  # no matching subcmd
             raise ValueError("Invalid subcommand")
+
+    if args.peer_command in ("add", "rm"):
+        await peer_manager.notify_peer_change()
 
 
 async def model_cmd(args):
@@ -37,7 +41,8 @@ async def model_cmd(args):
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":
-        model_manager.rm(args.repo_id, revision=args.revision, file_name=args.file)
+        model_manager.rm(args.repo_id, revision=args.revision,
+                         file_name=args.file)
     else:
         raise ValueError("Invalid subcommand")
 
@@ -53,7 +58,7 @@ async def daemon_cmd(args):
 async def exec_cmd(args, parser):
     try:
         if args.command == "peer":
-            peer_cmd(args)
+            await peer_cmd(args)
         elif args.command == "model":
             await model_cmd(args)
         elif args.command == "daemon":
@@ -111,7 +116,7 @@ def arg_parser():
 async def async_main():
     FORMAT = '%(asctime)s %(levelname)s: %(message)s'
     logging.basicConfig(stream=sys.stderr, format=FORMAT, level=logging.DEBUG)
-    
+
     args, parser = arg_parser()
 
     try:
@@ -126,4 +131,3 @@ def main():
         asyncio.run(async_main())
     except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
         logging.info("Server shut down ...")
-

@@ -43,7 +43,7 @@ class Peer:
     def __hash__(self) -> int:
         return hash((self.ip, self.port))
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.ip}:{self.port}"
 
     def to_dict(self):

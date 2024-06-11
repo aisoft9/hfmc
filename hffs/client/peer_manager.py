@@ -1,6 +1,7 @@
 from typing import List
 from ..common.peer import Peer
-import logging
+from .http_client import notify_peer_change
+
 
 class PeerManager:
     DEFAULT_PORT = 8000
@@ -26,3 +27,6 @@ class PeerManager:
             print("<empty>")
         for peer in self.get_peers():
             print(f"{peer.ip}:{peer.port}")
+
+    async def notify_peer_change(self):
+        await notify_peer_change()

@@ -7,11 +7,11 @@ from aiohttp import web
 from aiohttp import streamer
 from contextvars import ContextVar
 
-from ..common.peer_store import PeerStore
-from .peer_prober import PeerProber
-from ..common.hf_adapter import file_in_cache, try_to_load_etag
 import huggingface_hub as hf
-from ..common.settings import save_local_service_port
+from .peer_prober import PeerProber
+from ..common.peer_store import PeerStore
+from ..common.hf_adapter import file_in_cache
+from ..common.settings import save_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 
 ctx_var_peer_prober = ContextVar("PeerProber")
 
@@ -137,14 +137,28 @@ async def search_model(request):
         return web.Response(status=200, headers=headers)
 
 
-async def start_server(port):
-    peers = []
+def get_peers():
+    peers = set()
     with PeerStore() as peer_store:
         peers = peer_store.get_peers()
+    return peers
 
+
+async def on_peer_change(_):
+    peers = get_peers()
+    peer_prober: PeerProber = ctx_var_peer_prober.get()
+    peer_prober.update_peers(peers)
+    return web.Response(status=200)
+
+
+async def start_server(port):
     # set up context before starting the server
+    peers = get_peers()
     peer_prober = PeerProber(peers)
     ctx_var_peer_prober.set(peer_prober)
+
+    # start peer prober to run in the background
+    asyncio.create_task(peer_prober.start_probe())
 
     # start aiohttp server
     app = web.Application()
@@ -154,8 +168,9 @@ async def start_server(port):
         '/{user}/{model}/resolve/{revision}/{file_name:.*}', search_model)
 
     # GET requests
-    app.router.add_get('/ping', pong)
-    app.router.add_get('/alive_peers', alive_peers)
+    app.router.add_get(HFFS_API_PING, pong)
+    app.router.add_get(HFFS_API_ALIVE_PEERS, alive_peers)
+    app.router.add_get(HFFS_API_PEER_CHANGE, on_peer_change)
     app.router.add_get(
         '/{user}/{model}/resolve/{revision}/{file_name:.*}', download_file)
 
@@ -165,8 +180,6 @@ async def start_server(port):
     site = web.TCPSite(runner=runner, host='0.0.0.0', port=port)
     await site.start()
 
-    # start peer prober to run in the background
-    asyncio.create_task(peer_prober.start_probe())
     save_local_service_port(port)
 
     logging.info(f"HFFS daemon started at port {port}!")
