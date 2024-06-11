@@ -20,6 +20,9 @@ class PeerManager:
         return self._peer_store.get_peers()
 
     def list_peers(self):
-        logging.info("List of peers:")
+        print("List of peers:")
+        peers = self.get_peers()
+        if len(peers) == 0:
+            print("<empty>")
         for peer in self.get_peers():
-            logging.info(f"{peer.ip}:{peer.port}")
+            print(f"{peer.ip}:{peer.port}")

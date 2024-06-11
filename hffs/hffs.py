@@ -109,7 +109,8 @@ def arg_parser():
 
 
 async def async_main():
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+    logging.basicConfig(stream=sys.stderr, format=FORMAT, level=logging.DEBUG)
     
     args, parser = arg_parser()
 

@@ -188,16 +188,16 @@ class ModelManager:
         show_delete_path.extend(to_delete_refs_path)
         show_delete_path.extend(to_delete_revs_path)
         show_delete_path.extend(to_delete_blobs_path)
-        logging.info("Will delete the following files:")
+        print("Will delete the following files:")
 
         for p in show_delete_path:
-            logging.info(p)
+            print(p)
 
         confirm = input(
             "\nWARNING: files or dirs will be delete! Enter [y/Y] to confirm: ")
 
         if confirm.strip() not in ["y", "Y"]:
-            logging.info("Cancel delete!")
+            print("Cancel delete!")
             return
 
         delete_strategy = DeleteCacheStrategy(expected_freed_size=0,
@@ -210,5 +210,5 @@ class ModelManager:
                                               snapshots=frozenset(to_delete_revs_path))
 
         delete_strategy.execute()
-        logging.info("Delete success!")
+        print("Delete success!")
 
