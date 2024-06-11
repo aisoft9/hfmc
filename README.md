@@ -13,10 +13,14 @@ HFFS 的典型使用场景有：
 
 # 快速开始
 
+> [!NOTE]
+> 确保你安装了 Python 3.11+ 版本并且安装了 pip。
+
+
 1. 安装
 
    ```bash
-   pip3.11 install hffs-0.0.1-py3-none-any.whl
+   pip install hffs-0.0.1-py3-none-any.whl
    ```
 
 2. 添加加速节点(局域网内共享模型文件的其他主机IP)
@@ -55,11 +59,9 @@ hffs daemon start
 
 ```bash
 
-hffs daemon stop [--destroy-cache]
+Ctrl-C
 
 ```
-
-用户通过上面的命令关闭本地 HFFS 服务。如果指定 --destory-cache 选项，则删除本地下载的模型。
 
 ## Peer 管理
 
@@ -70,14 +72,13 @@ hffs daemon stop [--destroy-cache]
 
 ```bash
 
-hffs peer add [HOST|IP|FILE]
+hffs peer add IP [--port PORT_NUM]
 
 ```
 
 用户通过上面的命令把 peer 节点配对。配对后，两个节点之间的模型实现互通共享。
 
-- `HOST|IP` 参数是目标节点的 host 或者 ip 地址，如果有多个值，用逗号隔开
-- `FILE` 参数是配置文件路径，peer 的 host 或者 ip 可以保存在文件中管理
+- `IP` 参数是目标节点的 ip 地址
 
 ### 查看 Peer
 
@@ -93,7 +94,7 @@ hffs peer ls
 
 ```bash
 
-hffs peer rm [HOST|IP|FILE]
+hffs peer rm IP [--port PORT_NUM]
 
 ```
 
@@ -123,7 +124,7 @@ hffs model ls [repo-id]
 
 ```bash
 
-hffs model add repo-id [--branch BRANCH] [--revision REVISION]
+hffs model add repo-id --file FILE_NAME [--revision REVISION]
 
 ```
 
@@ -136,7 +137,7 @@ hffs model add repo-id [--branch BRANCH] [--revision REVISION]
 
 ```bash
 
-hffs model rm repo-id [--branch BRANCH] [--revision REVISION]
+hffs model rm repo-id --file FILE_NAME [--revision REVISION]
 
 ```
 

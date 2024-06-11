@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import asyncio
+import os
 import sys
 import logging
 
@@ -115,7 +116,9 @@ def arg_parser():
 
 async def async_main():
     FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-    logging.basicConfig(stream=sys.stderr, format=FORMAT, level=logging.DEBUG)
+    level = logging.DEBUG if os.environ.get(
+        "HFFS_VERBOSE", None) else logging.INFO
+    logging.basicConfig(stream=sys.stderr, format=FORMAT, level=level)
 
     args, parser = arg_parser()
 
