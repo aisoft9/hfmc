@@ -11,6 +11,7 @@ from .client.model_manager import ModelManager
 from .client.peer_manager import PeerManager
 from .server import http_server
 from .common.settings import HFFS_LOG_DIR
+from .client.daemon_manager import daemon_start, daemon_stop
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +52,12 @@ async def model_cmd(args):
 
 async def daemon_cmd(args):
     if args.daemon_command == "start":
-        await http_server.start_server(args.port)
+        if args.daemon == "true":
+            daemon_start(args)
+        else:
+            await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
-        await http_client.stop_server()
-        logger.info("HFFS daemon stopped!")
+        daemon_stop()
 
 
 async def exec_cmd(args, parser):
@@ -80,7 +83,8 @@ def arg_parser():
     daemon_parser = subparsers.add_parser('daemon')
     daemon_subparsers = daemon_parser.add_subparsers(dest='daemon_command')
     daemon_start_parser = daemon_subparsers.add_parser('start')
-    daemon_start_parser.add_argument('--port', type=int, default=8000)
+    daemon_start_parser.add_argument('--port', type=int, default=9009)
+    daemon_start_parser.add_argument("--daemon", type=str, default="true")
     daemon_subparsers.add_parser('stop')
 
     # hffs peer {add,rm,ls} IP [--port port]
@@ -88,10 +92,10 @@ def arg_parser():
     peer_subparsers = peer_parser.add_subparsers(dest='peer_command')
     peer_add_parser = peer_subparsers.add_parser('add')
     peer_add_parser.add_argument('IP')
-    peer_add_parser.add_argument('--port', type=int, default=8000)
+    peer_add_parser.add_argument('--port', type=int, default=9009)
     peer_rm_parser = peer_subparsers.add_parser('rm')
     peer_rm_parser.add_argument('IP')
-    peer_rm_parser.add_argument('--port', type=int, default=8000)
+    peer_rm_parser.add_argument('--port', type=int, default=9009)
     peer_subparsers.add_parser('ls')
 
     # hffs model {ls,add,rm,search} [--repo-id id] [--revision REVISION] [--file FILE]

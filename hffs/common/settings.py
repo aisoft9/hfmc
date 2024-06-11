@@ -11,6 +11,7 @@ HFFS_MODEL_DIR = os.path.join(HFFS_HOME, "models")
 HFFS_ETAG_DIR = os.path.join(HFFS_HOME, "etags")
 HFFS_CONF = os.path.join(HFFS_HOME, "hffs.conf")
 HFFS_LOG_DIR = os.path.join(HFFS_HOME, "logs")
+HFFS_EXEC_NAME = "hffs"
 
 
 HFFS_API_PING = "/hffs_api/ping"
