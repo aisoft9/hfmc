@@ -22,7 +22,7 @@ async def peer_cmd(args):
         elif args.peer_command == "rm":
             peer_manager.remove_peer(args.IP, args.port)
         elif args.peer_command == "ls":
-            peer_manager.list_peers()
+            await peer_manager.list_peers()
         else:  # no matching subcmd
             raise ValueError("Invalid subcommand")
 

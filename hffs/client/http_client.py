@@ -8,13 +8,16 @@ import logging
 
 from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
-from huggingface_hub.constants import HUGGINGFACE_HEADER_X_LINKED_ETAG
 from ..common.settings import load_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 
 LOCAL_HOST = "127.0.0.1"
 
 
-async def ping(peer):
+def timeout_sess(timeout=60):
+    return aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout))
+
+
+async def ping(peer, timeout=15):
     alive = False
     seq = os.urandom(4).hex()
     url = f"http://{peer.ip}:{peer.port}" + HFFS_API_PING + f"?seq={seq}"
@@ -22,7 +25,7 @@ async def ping(peer):
     logging.debug(f"[CLIENT]: probing {peer.ip}:{peer.port}, seq = {seq}")
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with timeout_sess(timeout) as session:
             async with session.get(url) as response:
                 if response.status == 200:
                     alive = True
@@ -38,13 +41,13 @@ async def ping(peer):
     return peer
 
 
-async def alive_peers():
+async def alive_peers(timeout=2):
     port = load_local_service_port()
     url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_ALIVE_PEERS
     peers = []
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with timeout_sess(timeout) as session:
             async with session.get(url) as response:
                 if response.status == 200:
                     peer_list = await response.json()
@@ -73,7 +76,7 @@ async def search_coro(peer, repo_id, revision, file_name):
         Peer or None: if the peer has the target file, return the peer, otherwise None
     """
     try:
-        async with aiohttp.ClientSession() as session:
+        async with timeout_sess() as session:
             async with session.head(f"http://{peer.ip}:{peer.port}/{repo_id}/resolve/{revision}/{file_name}") as response:
                 if response.status == 200:
                     return peer
@@ -135,7 +138,7 @@ async def get_model_etag(endpoint, repo_id, filename, revision='main'):
     return metadata.etag
 
 
-async def notify_peer_change():
+async def notify_peer_change(timeout=2):
     try:
         port = load_local_service_port()
     except LookupError:
@@ -144,7 +147,7 @@ async def notify_peer_change():
     url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_PEER_CHANGE
 
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=3)) as session:
+        async with timeout_sess(timeout) as session:
             async with session.get(url) as response:
                 logging.debug(f"Peer change http status: {response.status}")
     except Exception as e:

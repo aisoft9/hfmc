@@ -1,6 +1,6 @@
 from typing import List
 from ..common.peer import Peer
-from .http_client import notify_peer_change
+from .http_client import notify_peer_change, alive_peers
 
 
 class PeerManager:
@@ -20,13 +20,20 @@ class PeerManager:
     def get_peers(self) -> List[Peer]:
         return self._peer_store.get_peers()
 
-    def list_peers(self):
-        print("List of peers:")
-        peers = self.get_peers()
+    async def list_peers(self):
+        alives = await alive_peers()
+        alives = set(alives)
+
+        peers = sorted(self.get_peers())
+
         if len(peers) == 0:
-            print("<empty>")
-        for peer in self.get_peers():
-            print(f"{peer.ip}:{peer.port}")
+            print("No peer is configured.")
+            return
+
+        print("List of peers:")
+        for peer in peers:
+            alive = "alive" if peer in alives else ""
+            print(f"{peer.ip}\t{peer.port}\t{alive}")
 
     async def notify_peer_change(self):
         await notify_peer_change()
