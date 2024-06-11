@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import logging
 
 from prettytable import PrettyTable
@@ -10,6 +9,8 @@ from huggingface_hub import scan_cache_dir, hf_hub_download, DeleteCacheStrategy
 from . import http_client
 from ..common.settings import HFFS_MODEL_DIR
 from ..common.hf_adapter import save_etag
+
+logger = logging.getLogger(__name__)
 
 
 def get_path_in_snapshot(repo_path, commit_hash, file_path):
@@ -37,7 +38,8 @@ class ModelManager:
                                        filename=file_name,
                                        endpoint=endpoint)
             except Exception as e:
-                logging.warning("Exception: {}".format(e))
+                logger.info(f"Failed to download model from {endpoint}")
+                logger.debug(e)
                 return False, None
 
             try:
@@ -46,7 +48,9 @@ class ModelManager:
                     raise ValueError("ETag not found!")
                 save_etag(etag, repo_id, file_name, revision)
             except Exception as e:
-                logging.warning("Exception: {}".format(e))
+                logger.info(
+                    f"Failed to save etag from {endpoint} for {repo_id}/{file_name}@{revision}")
+                logger.debug(e)
                 return False, None
 
             return True, path
@@ -60,24 +64,24 @@ class ModelManager:
         for peer in avails:
             done, path = await do_download(f"http://{peer.ip}:{peer.port}")
             if done:
-                logging.info(f"Download successfully: {path}")
+                logger.info(f"Download successfully: {path}")
                 return
 
-        logging.info("Cannot download from peers; try mirror sites")
+        logger.info("Cannot download from peers; try mirror sites")
 
         done, path = await do_download("https://hf-mirror.com")
         if done:
-            logging.info(f"Download successfully: {path}")
+            logger.info(f"Download successfully: {path}")
             return
 
-        logging.info("Cannot download from mirror site; try hf.co")
+        logger.info("Cannot download from mirror site; try hf.co")
 
         done, path = await do_download("https://huggingface.co")
         if done:
-            logging.info(f"Download successfully: {path}")
+            logger.info(f"Download successfully: {path}")
             return
 
-        logging.info(
+        logger.info(
             "Cannot find target model in hf.co; double check the model info")
 
     def ls(self, repo_id):
@@ -211,4 +215,3 @@ class ModelManager:
 
         delete_strategy.execute()
         print("Delete success!")
-

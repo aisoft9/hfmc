@@ -10,6 +10,8 @@ from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
 from ..common.settings import load_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 
+logger = logging.getLogger(__name__)
+
 LOCAL_HOST = "127.0.0.1"
 
 
@@ -22,22 +24,23 @@ async def ping(peer, timeout=15):
     seq = os.urandom(4).hex()
     url = f"http://{peer.ip}:{peer.port}" + HFFS_API_PING + f"?seq={seq}"
 
-    logging.debug(f"[CLIENT]: probing {peer.ip}:{peer.port}, seq = {seq}")
+    logger.debug(f"probing {peer.ip}:{peer.port}, seq = {seq}")
 
     try:
         async with timeout_sess(timeout) as session:
             async with session.get(url) as response:
                 if response.status == 200:
                     alive = True
+    except TimeoutError:
+        pass
     except Exception as e:
-        logging.warning(e)
+        logger.warning(e)
 
     peer.set_alive(alive)
     peer.set_epoch(int(time.time()))
 
     status_msg = "alive" if alive else "dead"
-    logging.debug(
-        f"[CLIENT]: Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
+    logger.debug(f"Peer {peer.ip}:{peer.port} (seq:{seq}) is {status_msg}")
     return peer
 
 
@@ -53,20 +56,16 @@ async def alive_peers(timeout=2):
                     peer_list = await response.json()
                     peers = [Peer.from_dict(peer) for peer in peer_list]
                 else:
-                    logging.error(
-                        f"Failed to get alive peers, status code: {response.status}")
-                return peers
+                    err = f"Failed to get alive peers, HTTP status: {response.status}"
+                    logger.error(err)
     except aiohttp.client_exceptions.ClientConnectionError:
-        logging.error(
-            "Make sure the HFFS service is up by running: python hffs.py start")
-        return peers
-
-
-async def timeout_coro(coro, timeout, default):
-    try:
-        return await asyncio.wait_for(coro, timeout)
+        logger.warning("Cannot connect daemon for alive peers")
     except TimeoutError:
-        return default
+        logger.error("Timeout to connect daemon for alive peers")
+    except Exception as e:
+        logger.warning(e)
+
+    return peers
 
 
 async def search_coro(peer, repo_id, revision, file_name):
@@ -76,7 +75,7 @@ async def search_coro(peer, repo_id, revision, file_name):
         Peer or None: if the peer has the target file, return the peer, otherwise None
     """
     try:
-        async with timeout_sess() as session:
+        async with timeout_sess(10) as session:
             async with session.head(f"http://{peer.ip}:{peer.port}/{repo_id}/resolve/{revision}/{file_name}") as response:
                 if response.status == 200:
                     return peer
@@ -87,18 +86,13 @@ async def search_coro(peer, repo_id, revision, file_name):
 async def do_search(peers, repo_id, revision, file_name):
     tasks = []
 
-    async def search_peer_coro(peer):
-        # for a single peer, search the model in it with search_coro, in addition
-        # wrap search_coro with timeout_coro to have it finish in 10 seconds
-        search = search_coro(peer, repo_id, revision, file_name)
-        return await timeout_coro(search, 10, None)
-
     def all_finished(tasks):
         return all([task.done() for task in tasks])
 
     async with asyncio.TaskGroup() as g:
         for peer in peers:
-            tasks.append(g.create_task(search_peer_coro(peer)))
+            coro = search_coro(peer, repo_id, revision, file_name)
+            tasks.append(g.create_task(coro))
 
         while not all_finished(tasks):
             await asyncio.sleep(1)
@@ -112,16 +106,16 @@ async def do_search(peers, repo_id, revision, file_name):
 
 async def search_model(peers, repo_id, file_name, revision):
     if not peers:
-        logging.info("No active peers to search")
+        logger.info("No active peers to search")
         return []
 
-    logging.info("Will check the following peers:")
-    logging.info(Peer.print_peers(peers))
+    logger.info("Will check the following peers:")
+    logger.info(Peer.print_peers(peers))
 
     avails = await do_search(peers, repo_id, revision, file_name)
 
-    logging.info("Peers who have the model:")
-    logging.info(Peer.print_peers(avails))
+    logger.info("Peers who have the model:")
+    logger.info(Peer.print_peers(avails))
 
     return avails
 
@@ -149,9 +143,12 @@ async def notify_peer_change(timeout=2):
     try:
         async with timeout_sess(timeout) as session:
             async with session.get(url) as response:
-                logging.debug(f"Peer change http status: {response.status}")
+                if response.status != 200:
+                    logger.debug(f"Peer change http status: {response.status}")
+    except TimeoutError:
+        logger.error("Timeout to connect daemon for peer change")
     except Exception as e:
-        logging.debug(f"Peer change error: {e}")
+        logger.error(f"Peer change error: {e}")
 
 
 async def stop_server():

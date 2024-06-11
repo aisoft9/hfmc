@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 import argparse
 import asyncio
+import logging.handlers
 import os
 import sys
 import logging
 
-from .client import http_client
 from .common.peer_store import PeerStore
+from .client import http_client
 from .client.model_manager import ModelManager
 from .client.peer_manager import PeerManager
 from .server import http_server
+from .common.settings import HFFS_LOG_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +55,7 @@ async def daemon_cmd(args):
         await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
         await http_client.stop_server()
-        logging.info("HFFS daemon stopped!")
+        logger.info("HFFS daemon stopped!")
 
 
 async def exec_cmd(args, parser):
@@ -114,23 +116,46 @@ def arg_parser():
     return parser.parse_args(), parser
 
 
+def logging_level():
+    # Only use DEBUG or INFO level for logging
+    verbose = os.environ.get("HFFS_VERBOSE", None)
+    return logging.DEBUG if verbose else logging.INFO
+
+
+def logging_handler(args):
+    # daemon's logs go to log files, others go to stdout
+    if args.command == "daemon" and args.daemon_command == "start":
+        os.makedirs(HFFS_LOG_DIR, exist_ok=True)
+        log_path = os.path.join(HFFS_LOG_DIR, "hffs.log")
+        return logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
+    else:
+        return logging.StreamHandler()
+
+
+def setup_logging(args):
+    # configure root logger
+    handler = logging_handler(args)
+    
+    level = logging_level()
+    handler.setLevel(level)
+    
+    FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handler.setFormatter(logging.Formatter(FORMAT))
+    
+    logging.getLogger().addHandler(handler)
+    
+    # suppress lib's info log
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
+
+
 async def async_main():
-    FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-    level = logging.DEBUG if os.environ.get(
-        "HFFS_VERBOSE", None) else logging.INFO
-    logging.basicConfig(stream=sys.stderr, format=FORMAT, level=level)
-
     args, parser = arg_parser()
-
-    try:
-        await asyncio.gather(exec_cmd(args, parser))
-    except Exception as e:
-        logging.error("Exception: {}".format(e))
-        exit(1)
+    setup_logging(args)
+    await exec_cmd(args, parser)
 
 
 def main():
     try:
         asyncio.run(async_main())
     except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
-        logging.info("Server shut down ...")
+        logger.info("Server shut down ...")
