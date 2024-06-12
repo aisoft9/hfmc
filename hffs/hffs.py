@@ -4,6 +4,7 @@ import asyncio
 import os
 import logging.handlers
 import logging
+import sys
 
 from .common.peer_store import PeerStore
 from .client import http_client
@@ -132,21 +133,23 @@ def logging_handler(args):
         log_path = os.path.join(HFFS_LOG_DIR, "hffs.log")
         return logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
     else:
-        return logging.StreamHandler()
+        return logging.StreamHandler(stream=sys.stderr)
 
 
 def setup_logging(args):
     # configure root logger
     handler = logging_handler(args)
-    
+
     level = logging_level()
     handler.setLevel(level)
-    
-    FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    handler.setFormatter(logging.Formatter(FORMAT))
-    
-    logging.getLogger().addHandler(handler)
-    
+
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handler.setFormatter(logging.Formatter(log_format))
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(level)
+
     # suppress lib's info log
     logging.getLogger('asyncio').setLevel(logging.WARNING)
 
