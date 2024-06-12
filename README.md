@@ -11,7 +11,7 @@ HFFS 的典型使用场景有：
 
 下面是 HFFS 所提供的命令行文档。看看它们是如何帮助用户访问模型文件的吧。
 
-# 快速开始
+## 快速开始
 
 > [!NOTE]
 > 确保你安装了 Python 3.11+ 版本并且安装了 pip。
@@ -29,23 +29,23 @@ HFFS 的典型使用场景有：
    hffs peer add 192.168.0.2
    ```
 
-2. 启动服务
+3. 启动服务
 
    ```bash
    hffs daemon start
    ```
 
-3. 下载模型文件(新起一个终端窗口)
+4. 下载模型文件(新起一个终端窗口)
 
    ```bash
-   hffs model add google/timesfm-1.0-200m --file=README.md
+   hffs model add google/timesfm-1.0-200m README.md
    ```
 
-# HFFS 的命令行
+## HFFS 的命令行
 
-## HFFS 服务管理
+### HFFS 服务管理
 
-### 启动 HFFS
+#### 启动 HFFS
 
 ```bash
 
@@ -55,20 +55,20 @@ hffs daemon start
 
 用户通过上面的命令开启本地 HFFS 服务。如果还未初始化，该命令则初始化 HFFS。
 
-### 关闭 HFFS
+#### 关闭 HFFS
 
 ```bash
 
-Ctrl-C
+hffs daemon stop
 
 ```
 
-## Peer 管理
+### Peer 管理
 
 > [!NOTE]
 > 关于自动 Peer 管理：为了提高易用性，HFFS 计划加入自动 Peer 管理功能（HFFS 自动发现、连接 Peer）。在该功能发布以前，用户可以通过下面的命令手动管理 Peer。
 
-### 添加 Peer
+#### 添加 Peer
 
 ```bash
 
@@ -90,7 +90,7 @@ hffs peer ls
 
 用户通过上面的命令查看 peer 信息。
 
-### 删除 Peer
+#### 删除 Peer
 
 ```bash
 
@@ -100,9 +100,9 @@ hffs peer rm IP [--port PORT_NUM]
 
 用户通过上面的命令删除 peer 节点。
 
-## 模型管理
+### 模型管理
 
-### 查看模型
+#### 查看模型
 
 ```bash
 
@@ -120,11 +120,11 @@ hffs model ls [repo-id]
 - local path：模型在本地文件系统中的路径
 - fully downoaded：模型是否已经被完整下载
 
-### 添加模型
+#### 添加模型
 
 ```bash
 
-hffs model add repo-id --file FILE_NAME [--revision REVISION]
+hffs model add repo-id FILE_NAME [--revision REVISION]
 
 ```
 
@@ -133,11 +133,11 @@ hffs model add repo-id --file FILE_NAME [--revision REVISION]
 - 如果模型已经下载到本地了，返回 `hffs model ls repo-id` 命令的返回信息
 - 如果模型还未下载到本地，从 peer 节点或者 hf.co 下载目标模型，显示下载进度条，结束后返回 `hffs model ls repo-id` 命令的返回信息
 
-### 删除模型
+#### 删除模型
 
 ```bash
 
-hffs model rm repo-id --file FILE_NAME [--revision REVISION]
+hffs model rm repo-id FILE_NAME [--revision REVISION]
 
 ```
 

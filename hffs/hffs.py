@@ -1,9 +1,8 @@
 #!/usr/bin/python3
 import argparse
 import asyncio
-import logging.handlers
 import os
-import sys
+import logging.handlers
 import logging
 
 from .common.peer_store import PeerStore
@@ -102,16 +101,16 @@ def arg_parser():
     model_ls_parser.add_argument('--repo_id')
     model_add_parser = model_subparsers.add_parser('add')
     model_add_parser.add_argument('repo_id')
+    model_add_parser.add_argument('file')
     model_add_parser.add_argument('--revision', type=str, default="main")
-    model_add_parser.add_argument('--file')
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--revision')
-    model_rm_parser.add_argument('--file')
+    model_rm_parser.add_argument('file')
+    model_rm_parser.add_argument('--revision', type=str, default="main")
     model_search_parser = model_subparsers.add_parser('search')
     model_search_parser.add_argument('repo_id')
+    model_search_parser.add_argument('file')
     model_search_parser.add_argument('--revision', type=str, default="main")
-    model_search_parser.add_argument('--file')
 
     return parser.parse_args(), parser
 
