@@ -151,7 +151,7 @@ async def on_peer_change(_):
     return web.Response(status=200)
 
 
-async def start_server(port):
+async def start_server_safe(port):
     # set up context before starting the server
     peers = get_peers()
     peer_prober = PeerProber(peers)
@@ -187,3 +187,14 @@ async def start_server(port):
     # keep the server running
     while True:
         await asyncio.sleep(3600)
+
+
+async def start_server(port):
+    try:
+        await start_server_safe(port)
+    except OSError as e:
+        if e.errno == 48:
+            print(f"Daemon is NOT started: port {port} is already in use")
+    except Exception as e:
+        logging.error("Failed to start HFFS daemon")
+        logging.error(e)
