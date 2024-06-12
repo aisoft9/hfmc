@@ -3,11 +3,14 @@ from .peer import Peer
 from .settings import HFFS_HOME, HFFS_PEER_CONF
 import logging
 
+logger = logging.getLogger(__name__)
+
+
 def create_file():
     os.makedirs(HFFS_HOME, exist_ok=True)
     if not os.path.exists(HFFS_PEER_CONF):
         with open(HFFS_PEER_CONF, "w", encoding="utf-8"):
-            logging.info(f"Created {HFFS_PEER_CONF}")
+            logger.debug(f"Created {HFFS_PEER_CONF}")
 
 
 class PeerStore:
@@ -20,7 +23,7 @@ class PeerStore:
 
     def __exit__(self, type, value, traceback):
         if traceback:
-            logging.error(f"PeerStore error, type=<{type}>, value=<{value}>")
+            logger.debug(f"PeerStore error, type=<{type}>, value=<{value}>")
         self.close()
 
     def _load_peers(self):

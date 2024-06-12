@@ -48,7 +48,7 @@ class PeerProber:
         self._reset_peer_heap()
 
         if len(self._probe_heap) == 0:
-            logging.warning("No peers configured to probe")
+            logging.info("No peers configured to probe")
 
         def probe_cb(task):
             try:
@@ -60,7 +60,7 @@ class PeerProber:
                     else:
                         self._actives.discard(peer)
             except asyncio.exceptions.CancelledError:
-                print("probing is canceled")
+                logging.debug("probing is canceled")
 
         while self._probing:
             await asyncio.sleep(3)

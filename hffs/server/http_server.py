@@ -129,7 +129,7 @@ async def search_model(request):
     else:
         headers = {
             hf.constants.HUGGINGFACE_HEADER_X_REPO_COMMIT: cached["commit_hash"],
-            "ETag": cached["etag"],
+            "ETag": cached["etag"] if cached["etag"] else "",
             "Content-Length": str(cached["size"]),
             "Location": str(request.url),
         }
