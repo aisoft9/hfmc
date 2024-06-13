@@ -14,10 +14,6 @@ from ..common.hf_adapter import save_etag
 logger = logging.getLogger(__name__)
 
 
-def get_path_in_snapshot(repo_path, commit_hash, file_path):
-    return os.path.normpath(f"{repo_path}/snapshots/{commit_hash}/{file_path}")
-
-
 def _assume(pred, msg):
     if not pred:
         logger.info(msg)
