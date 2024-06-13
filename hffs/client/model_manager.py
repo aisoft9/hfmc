@@ -3,9 +3,10 @@
 
 import os
 import logging
+from pathlib import Path
 
 from prettytable import PrettyTable
-from huggingface_hub import scan_cache_dir, hf_hub_download, DeleteCacheStrategy
+from huggingface_hub import scan_cache_dir, hf_hub_download, CachedRevisionInfo, CachedRepoInfo, HFCacheInfo
 from . import http_client
 from ..common.settings import HFFS_MODEL_DIR
 from ..common.hf_adapter import save_etag
@@ -15,6 +16,143 @@ logger = logging.getLogger(__name__)
 
 def get_path_in_snapshot(repo_path, commit_hash, file_path):
     return os.path.normpath(f"{repo_path}/snapshots/{commit_hash}/{file_path}")
+
+
+def _assume(pred, msg):
+    if not pred:
+        logger.info(msg)
+        raise ValueError()
+
+
+def _is_parent(parent: Path, child: Path):
+    try:
+        child.absolute().relative_to(parent.absolute())
+        return True
+    except ValueError:
+        return False
+
+
+def _rm_file(fp: Path, root_path: Path, msg: str):
+    # fp is NOT in root_path, raise error
+    _assume(_is_parent(root_path, fp), f"{fp} is not in {root_path}")
+
+    # remove target file
+    if fp.exists() and fp.is_file():
+        fp.unlink()
+        logger.debug(f"{msg}: {fp}")
+
+    # remove parent directories if empty up to root_path
+    parent_dir = fp.parent
+    while _is_parent(root_path, parent_dir):
+        if not any(parent_dir.iterdir()):
+            parent_dir.rmdir()
+            logger.debug(f"Remove {parent_dir}")
+            parent_dir = parent_dir.parent
+        else:
+            break
+
+
+def _match_repo(cache_info: HFCacheInfo, repo_id):
+    for repo in cache_info.repos:
+        if repo.repo_id == repo_id:
+            return repo
+    return None
+
+
+def _match_rev(repo_info: CachedRepoInfo, revision):
+    for rev in repo_info.revisions:
+        if revision in rev.refs or rev.commit_hash.startswith(revision):
+            return rev
+    return None
+
+
+def _match_file(rev_info: CachedRevisionInfo, file_name: str):
+    file_path = rev_info.snapshot_path / file_name
+    for f in rev_info.files:
+        if f.file_path == file_path:
+            return f
+    return None
+
+
+def _rm(repo_id, file_name, revision="main"):
+    # check necessary arguments
+    _assume(repo_id, "Missing repo_id")
+    _assume(file_name, "Missing file_name")
+    _assume(revision, "Missing revision")
+
+    # match cached repo
+    cache_info = scan_cache_dir(HFFS_MODEL_DIR)
+    repo_info = _match_repo(cache_info, repo_id)
+    _assume(repo_info, "No matching repo")
+
+    # match cached revision
+    rev_info = _match_rev(repo_info, revision)
+    _assume(rev_info, "No matching revision")
+
+    # match cached file
+    file_info = _match_file(rev_info, file_name)
+    _assume(file_info, "No matching file")
+
+    # remove snapshot file
+    _rm_file(file_info.file_path,
+             repo_info.repo_path / "snapshots",
+             "Remove snapshot file")
+
+    # remove blob file
+    _rm_file(file_info.blob_path,
+             repo_info.repo_path / "blobs",
+             "Remove blob")
+
+    # if the snapshot dir is not longer existing, it means that the
+    # revision is deleted entirely, hence all the refs pointing to
+    # the revision should be deleted
+    ref_dir = repo_info.repo_path / "refs"
+    if not rev_info.snapshot_path.exists() and ref_dir.exists():
+        ref_files = [ref_dir / ref for ref in rev_info.refs]
+        for ref in ref_files:
+            _rm_file(ref, ref_dir, "Remove ref file")
+
+
+def _ls_repos():
+    cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
+
+    table = PrettyTable()
+    table.field_names = [
+        "REPO ID",
+        "SIZE",
+        "NB FILES",
+        "LOCAL PATH",
+    ]
+
+    table.add_rows([
+        repo.repo_id,
+        "{:>12}".format(repo.size_on_disk_str),
+        repo.nb_files,
+        str(repo.repo_path),
+    ]
+        for repo in cache_info.repos
+    )
+    # Print the table to stdout
+    print(table)
+
+
+def _ls_repo_files(repo_id):
+    cache_info = scan_cache_dir(HFFS_MODEL_DIR)
+    repo_info = _match_repo(cache_info, repo_id)
+    _assume(repo_info, "No matching repo")
+
+    files = []
+    for rev in repo_info.revisions:
+        for f in rev.files:
+            refs = ", ".join(rev.refs)
+            commit = rev.commit_hash[:8]
+            file_name = f.file_path.relative_to(rev.snapshot_path)
+            files.append((refs, commit, file_name, f.size_on_disk_str))
+
+    table = PrettyTable()
+    table.field_names = ["REFS", "COMMIT", "FILE", "SIZE"]
+    table.add_rows(files)
+    print(table)
 
 
 class ModelManager:
@@ -38,8 +176,8 @@ class ModelManager:
                                        filename=file_name,
                                        endpoint=endpoint)
             except Exception as e:
-                logger.info(f"Failed to download model from {endpoint}")
-                logger.debug(e)
+                logger.info(
+                    f"Failed to download model from {endpoint}. Reason: {e}")
                 return False, None
 
             try:
@@ -85,133 +223,14 @@ class ModelManager:
             "Cannot find target model in hf.co; double check the model info")
 
     def ls(self, repo_id):
-        hf_cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
-
-        hf_cache_info_table = PrettyTable()
-        hf_cache_info_table.field_names = [
-            "REPO ID",
-            "REPO TYPE",
-            "SIZE ON DISK",
-            "NB FILES",
-            "LAST_ACCESSED",
-            "LAST_MODIFIED",
-            "REFS",
-            "LOCAL PATH",
-        ]
-
-        hf_cache_info_table.add_rows([
-            repo.repo_id,
-            repo.repo_type,
-            "{:>12}".format(repo.size_on_disk_str),
-            repo.nb_files,
-            repo.last_accessed_str,
-            repo.last_modified_str,
-            ", ".join(sorted(repo.refs)),
-            str(repo.repo_path),
-        ]
-            for repo in sorted(
-            filter(lambda r: True if (not repo_id or repo_id == r.repo_id) else False,
-                   hf_cache_info.repos),
-            key=lambda repo: repo.repo_id)
-        )
-        # Print the table to stdout
-        print(hf_cache_info_table)
-
-    def rm(self, repo_id, revision, file_name):
         if not repo_id:
-            raise ValueError("Repo id should not be empty!")
-
-        cache_info = scan_cache_dir(cache_dir=HFFS_MODEL_DIR)
-        matched_repos = list(
-            filter(lambda r: r.repo_id == repo_id, cache_info.repos))
-        only_one = 1
-
-        if len(matched_repos) != only_one:
-            raise LookupError("Not found! repo: {}".format(repo_id))
-
-        matched_repo = matched_repos[0]
-        to_delete_repo_path = []
-        to_delete_refs_path = []
-        to_delete_revs_path = []
-        to_delete_blobs_path = []
-
-        if not revision:
-            if file_name:
-                raise LookupError("File should be None when revision is None!")
-
-            to_delete_repo_path.append(matched_repo.repo_path)
+            _ls_repos()
         else:
-            matched_revs = list(filter(
-                lambda rev1: rev1.refs and revision in rev1.refs, matched_repo.revisions))
+            _ls_repo_files(repo_id)
 
-            if matched_revs:
-                to_delete_refs_path.append(
-                    matched_repo.repo_path / "refs" / revision)
-            else:
-                matched_revs = list(filter(lambda rev2: rev2.commit_hash.startswith(
-                    revision), matched_repo.revisions))
-
-                if not matched_revs:
-                    raise LookupError("Not found! rev: {}".format(revision))
-
-                for rev in matched_revs:
-                    if rev.refs:
-                        for ref in rev.refs:
-                            to_delete_refs_path.append(
-                                matched_repo.repo_path / "refs" / ref)
-
-                    to_delete_revs_path.append(rev.snapshot_path)
-
-            if file_name:
-                to_delete_refs_path = []
-                to_delete_revs_path = []
-
-                if len(matched_revs) != only_one:
-                    raise LookupError(
-                        "Revision should be unique when file not None! rev: {}".format(revision))
-
-                matched_rev = matched_revs[0]
-
-                for f in matched_rev.files:
-                    if str(f.file_path) == get_path_in_snapshot(matched_repo.repo_path, matched_rev.commit_hash,
-                                                                file_name):
-                        to_delete_revs_path.append(f.file_path)
-
-                        # 不支持符号链接的平台，blob_path == file_path, 不需要删除blob
-                        if f.blob_path != f.file_path:
-                            to_delete_blobs_path.append(f.blob_path)
-
-                        break
-
-                if not to_delete_revs_path:
-                    raise LookupError("Not found! file: {}".format(file_name))
-
-        show_delete_path = []
-
-        show_delete_path.extend(to_delete_repo_path)
-        show_delete_path.extend(to_delete_refs_path)
-        show_delete_path.extend(to_delete_revs_path)
-        show_delete_path.extend(to_delete_blobs_path)
-        print("Will delete the following files:")
-
-        for p in show_delete_path:
-            print(p)
-
-        confirm = input(
-            "\nWARNING: files or dirs will be delete! Enter [y/Y] to confirm: ")
-
-        if confirm.strip() not in ["y", "Y"]:
-            print("Cancel delete!")
-            return
-
-        delete_strategy = DeleteCacheStrategy(expected_freed_size=0,
-                                              blobs=frozenset(
-                                                  to_delete_blobs_path),
-                                              refs=frozenset(
-                                                  to_delete_refs_path),
-                                              repos=frozenset(
-                                                  to_delete_repo_path),
-                                              snapshots=frozenset(to_delete_revs_path))
-
-        delete_strategy.execute()
-        print("Delete success!")
+    def rm(self, repo_id, file_name, revision="main"):
+        try:
+            _rm(repo_id, file_name, revision)
+            _ls_repo_files(repo_id)
+        except ValueError:
+            logger.info("Failed to remove model")
