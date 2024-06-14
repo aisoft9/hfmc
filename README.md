@@ -105,19 +105,18 @@ hffs peer rm IP [--port PORT_NUM]
 
 ```bash
 
-hffs model ls [repo-id]
+hffs model ls [--repo_id REPO_ID] [--file FILE_]
 
 ```
 
 扫描已经下载的模型。该命令返回如下信息：
+- 如果没有指定 REPO_ID，返回 repo 列表
+   - repo-id 的 [相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
+- 如果制定了 REPO_ID，但是没有指定 FILE，返回 repo 中所有缓存的文件
+   - FILE 是模型文件相对 git root 目录的相对路径
+- 如果同时制定了 REPO_ID 和 FILE，返回指定文件的路径
+   - 在 Unix-like 的操作系统中，由于缓存内部使用了软连接的方式保存文件，所以文件在git中的路径和缓存中的路径不同，该命令返回缓存中的文件路径
 
-- repo-id：repo-id 的 [相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
-- branch：默认是 `main`
-- revision：默认是最新 revision
-- size on disk：模型在本地文件系统中所占空间的大小
-- num of files：模型所包括的文件个数
-- local path：模型在本地文件系统中的路径
-- fully downoaded：模型是否已经被完整下载
 
 #### 添加模型
 
