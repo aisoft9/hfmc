@@ -146,7 +146,7 @@ async def notify_peer_change(timeout=2):
                 if response.status != 200:
                     logger.debug(f"Peer change http status: {response.status}")
     except TimeoutError:
-        logger.error("Timeout to connect daemon for peer change")
+        pass  # silently ignore timeout
     except Exception as e:
         logger.error(f"Peer change error: {e}")
 
