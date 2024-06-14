@@ -34,7 +34,7 @@ HFFS 的典型使用场景有：
    hffs daemon start
    ```
 
-4. 下载模型文件(新起一个终端窗口)
+4. 下载模型文件
 
    ```bash
    hffs model add google/timesfm-1.0-200m README.md

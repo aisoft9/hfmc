@@ -4,7 +4,7 @@ from .http_client import notify_peer_change, alive_peers
 
 
 class PeerManager:
-    DEFAULT_PORT = 8000
+    DEFAULT_PORT = 9009
 
     def __init__(self, peer_store):
         self._peer_store = peer_store
