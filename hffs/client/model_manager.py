@@ -227,6 +227,6 @@ class ModelManager:
     def rm(self, repo_id, file_name, revision="main"):
         try:
             _rm(repo_id, file_name, revision)
-            _ls_repo_files(repo_id)
+            logger.info("Success to delete file!")
         except ValueError:
             logger.info("Failed to remove model")
