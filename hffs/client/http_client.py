@@ -147,8 +147,11 @@ async def notify_peer_change(timeout=2):
                     logger.debug(f"Peer change http status: {response.status}")
     except TimeoutError:
         pass  # silently ignore timeout
+    except aiohttp.client_exceptions.ClientConnectionError:
+        logger.error("Connect local service failed, please check service!")
     except Exception as e:
         logger.error(f"Peer change error: {e}")
+        logger.error("Please check the error, usually caused by local service not start!")
 
 
 async def stop_server():
