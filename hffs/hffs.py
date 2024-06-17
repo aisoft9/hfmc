@@ -13,6 +13,7 @@ from .client.peer_manager import PeerManager
 from .server import http_server
 from .common.settings import HFFS_LOG_DIR
 from .client.daemon_manager import daemon_start, daemon_stop
+from .client.uninstall_manager import uninstall_hffs
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,10 @@ async def daemon_cmd(args):
         daemon_stop()
 
 
+def uninstall_cmd():
+    uninstall_hffs()
+
+
 async def exec_cmd(args, parser):
     try:
         if args.command == "peer":
@@ -69,6 +74,8 @@ async def exec_cmd(args, parser):
             await model_cmd(args)
         elif args.command == "daemon":
             await daemon_cmd(args)
+        elif args.command == "uninstall":
+            uninstall_cmd()
         else:
             raise ValueError("Invalid command")
     except ValueError as e:
@@ -116,6 +123,9 @@ def arg_parser():
     model_search_parser.add_argument('repo_id')
     model_search_parser.add_argument('file')
     model_search_parser.add_argument('--revision', type=str, default="main")
+
+    # hffs uninstall
+    subparsers.add_parser('uninstall')
 
     return parser.parse_args(), parser
 

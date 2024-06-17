@@ -140,3 +140,20 @@ hffs model rm repo-id FILE_NAME [--revision REVISION]
 ```
 
 删除已经下载的模型数据。
+
+### 卸载管理
+
+#### 卸载软件
+
+> [!WARNING]
+>
+> 卸载软件将会清除所有添加的配置以及已下载的模型，无法恢复，请谨慎操作！
+
+```bash
+# 清除用户数据
+hffs uninstall
+
+# 卸载软件包
+pip uninstall hffs
+```
+
