@@ -68,9 +68,13 @@ def daemon_start(args):
 
 
 def daemon_stop_on_mac():
+    any_service_stopped = False
+
     for proc in psutil.process_iter(attrs=["pid", "name", "cmdline"]):
         if (proc.name().endswith("Python") and any(HFFS_EXEC_NAME in word for word in proc.cmdline()) and "daemon" in
                 proc.cmdline() and "start" in proc.cmdline()):
+            any_service_stopped = True
+            
             logging.info("Try to stop service {} ...".format(proc.name()))
             proc.terminate()
             wait_process_exit_time = 3
@@ -84,11 +88,18 @@ def daemon_stop_on_mac():
                                 .format(proc.name(), proc.pid))
             else:
                 logging.info("Service stopped!")
+
+    if not any_service_stopped:
+        logging.info("No service found, stop nothing!")
 
 
 def daemon_stop_common():
+    any_service_stopped = False
+
     for proc in psutil.process_iter(attrs=["pid", "name", "cmdline"]):
         if proc.name().startswith(HFFS_EXEC_NAME) and "daemon" in proc.cmdline() and "start" in proc.cmdline():
+            any_service_stopped = True
+
             logging.info("Try to stop service {} ...".format(proc.name()))
             proc.terminate()
             wait_process_exit_time = 3
@@ -102,6 +113,9 @@ def daemon_stop_common():
                                 .format(proc.name(), proc.pid))
             else:
                 logging.info("Service stopped!")
+
+    if not any_service_stopped:
+        logging.info("No service found, stop nothing!")
 
 
 def daemon_stop():
