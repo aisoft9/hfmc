@@ -25,16 +25,21 @@ def daemon_start(args):
     if not exec_path:
         raise FileNotFoundError(HFFS_EXEC_NAME)
 
-    # deal zombie process
+    creation_flags = 0
+
     if platform.system() in ["Linux"]:
+        # deal zombie process
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    elif platform.system() in ["Windows"]:
+        creation_flags = subprocess.CREATE_NO_WINDOW
 
     cmdline_daemon_false = "--daemon=false"
 
     _ = subprocess.Popen([exec_path, "daemon", "start", "--port={}".format(args.port), cmdline_daemon_false],
                          stdin=subprocess.DEVNULL,
                          stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL)
+                         stderr=subprocess.DEVNULL,
+                         creationflags=creation_flags)
 
     time.sleep(1)
 
