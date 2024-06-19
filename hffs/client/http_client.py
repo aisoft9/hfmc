@@ -59,11 +59,14 @@ async def alive_peers(timeout=2):
                     err = f"Failed to get alive peers, HTTP status: {response.status}"
                     logger.error(err)
     except aiohttp.client_exceptions.ClientConnectionError:
-        logger.warning("Cannot connect daemon for alive peers")
+        logger.warning("Prompt: connect local service failed, may not start, "
+                       "execute hffs daemon start to see which peers are active")
     except TimeoutError:
-        logger.error("Timeout to connect daemon for alive peers")
+        logger.error("Prompt: connect local service timeout, may not start, "
+                     "execute hffs daemon start to see which peers are active")
     except Exception as e:
         logger.warning(e)
+        logger.warning("Connect service error, please check it, usually caused by service not start!")
 
     return peers
 

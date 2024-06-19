@@ -94,10 +94,11 @@ def _rm(repo_id, file_name, revision="main"):
              repo_info.repo_path / "snapshots",
              "Remove snapshot file")
 
-    # remove blob file
-    _rm_file(file_info.blob_path,
-             repo_info.repo_path / "blobs",
-             "Remove blob")
+    # remove blob file, on platform not support symbol link, there are equal
+    if file_info.blob_path != file_info.file_path:
+        _rm_file(file_info.blob_path,
+                 repo_info.repo_path / "blobs",
+                 "Remove blob")
 
     # if the snapshot dir is not longer existing, it means that the
     # revision is deleted entirely, hence all the refs pointing to
@@ -143,10 +144,11 @@ def _ls_repo_files(repo_id):
             refs = ", ".join(rev.refs)
             commit = rev.commit_hash[:8]
             file_name = f.file_path.relative_to(rev.snapshot_path)
-            files.append((refs, commit, file_name, f.size_on_disk_str))
+            file_path = f.file_path
+            files.append((refs, commit, file_name, f.size_on_disk_str, file_path))
 
     table = PrettyTable()
-    table.field_names = ["REFS", "COMMIT", "FILE", "SIZE"]
+    table.field_names = ["REFS", "COMMIT", "FILE", "SIZE", "PATH"]
     table.add_rows(files)
     print(table)
 

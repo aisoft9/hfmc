@@ -92,10 +92,10 @@ def daemon_stop_on_mac():
                 logging.warning("Process killed but still running! service: {}, pid: {}"
                                 .format(proc.name(), proc.pid))
             else:
-                logging.info("Service stopped!")
+                print("Service stopped!")
 
     if not any_service_stopped:
-        logging.info("No service found, stop nothing!")
+        print("No service found, stop nothing!")
 
 
 def daemon_stop_common():
@@ -117,10 +117,10 @@ def daemon_stop_common():
                 logging.warning("Process killed but still running! service: {}, pid: {}"
                                 .format(proc.name(), proc.pid))
             else:
-                logging.info("Service stopped!")
+                print("Service stopped!")
 
     if not any_service_stopped:
-        logging.info("No service found, stop nothing!")
+        print("No service found, stop nothing!")
 
 
 def daemon_stop():

@@ -141,9 +141,15 @@ def logging_handler(args):
     if args.command == "daemon" and args.daemon_command == "start":
         os.makedirs(HFFS_LOG_DIR, exist_ok=True)
         log_path = os.path.join(HFFS_LOG_DIR, "hffs.log")
-        return logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
+        handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
+        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        handler.setFormatter(logging.Formatter(log_format))
     else:
-        return logging.StreamHandler(stream=sys.stderr)
+        handler = logging.StreamHandler(stream=sys.stderr)
+        log_format = "%(message)s"
+        handler.setFormatter(logging.Formatter(log_format))
+
+    return handler
 
 
 def setup_logging(args):
@@ -152,9 +158,6 @@ def setup_logging(args):
 
     level = logging_level()
     handler.setLevel(level)
-
-    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    handler.setFormatter(logging.Formatter(log_format))
 
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
