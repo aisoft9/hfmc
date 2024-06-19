@@ -11,7 +11,7 @@ from .daemon_manager import daemon_stop
 def uninstall_hffs():
     logging.warning("WARNING: will delete all hffs data on disk, can't recovery it!")
 
-    logging.info("\n\n{}\n".format(HFFS_HOME))
+    logging.info("\n{}\n".format(HFFS_HOME))
 
     first_confirm = input("UP directory will be delete! Enter y/Y to confirm:")
 
