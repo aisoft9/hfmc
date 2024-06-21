@@ -8,16 +8,35 @@ import shutil
 import platform
 import signal
 import subprocess
+import asyncio
 
 from ..common.settings import HFFS_EXEC_NAME
+from .http_client import get_service_status, post_stop_service
 
 
-def daemon_start(args):
-    process_running = list(filter(
-        lambda p: p.name().startswith(HFFS_EXEC_NAME) and "daemon" in p.cmdline() and "start" in p.cmdline(),
-        psutil.process_iter(attrs=["pid", "name", "cmdline"])))
+async def is_service_running():
+    try:
+        _ = await get_service_status()
+        return True
+    except ConnectionError:
+        return False
+    except Exception as e:
+        logging.info(f"If error not caused by service not start, may need check it! ERROR: {e}")
+        return False
 
-    if len(process_running) > 1:
+
+async def stop_service():
+    try:
+        await post_stop_service()
+        logging.info("Service stopped success!")
+    except ConnectionError:
+        logging.info("Can not connect to service, may already stopped!")
+    except Exception as e:
+        raise SystemError(f"Failed to stop service! ERROR: {e}")
+
+
+async def daemon_start(args):
+    if await is_service_running():
         raise LookupError("Service already start!")
 
     exec_path = shutil.which(HFFS_EXEC_NAME)
@@ -41,90 +60,24 @@ def daemon_start(args):
                          stderr=subprocess.DEVNULL,
                          creationflags=creation_flags)
 
-    time.sleep(1)
+    wait_start_time = 3
+    await asyncio.sleep(wait_start_time)
 
-    if platform.system() in ["Darwin"]:
-        process_running = list(
-            filter(
-                lambda p:
-                p.name().endswith("Python") and
-                any(HFFS_EXEC_NAME in word for word in p.cmdline()) and
-                "daemon" in p.cmdline() and
-                "start" in p.cmdline() and
-                cmdline_daemon_false in p.cmdline(),
-                psutil.process_iter(attrs=["pid", "name", "cmdline"])))
-
-        if len(process_running) != 1:
-            raise ProcessLookupError("Service not is one，check service!")
+    if await is_service_running():
+        logging.info("Daemon process started successfully")
     else:
-        process_running = list(
-            filter(
-                lambda p:
-                p.name().startswith(HFFS_EXEC_NAME) and
-                "daemon" in p.cmdline() and
-                "start" in p.cmdline() and
-                cmdline_daemon_false in p.cmdline(),
-                psutil.process_iter(attrs=["pid", "name", "cmdline"])))
-
-        if len(process_running) != 1:
-            raise ProcessLookupError("Service not is one，check service!")
-
-    print("Daemon process started successfully")
+        raise LookupError("Daemon start but not running, check service or retry!")
 
 
-def daemon_stop_on_mac():
-    any_service_stopped = False
+async def daemon_stop():
+    if not await is_service_running():
+        logging.info("Service not running, stop nothing!")
+        return
 
-    for proc in psutil.process_iter(attrs=["pid", "name", "cmdline"]):
-        if (proc.name().endswith("Python") and any(HFFS_EXEC_NAME in word for word in proc.cmdline()) and "daemon" in
-                proc.cmdline() and "start" in proc.cmdline()):
-            any_service_stopped = True
-            
-            logging.info("Try to stop service {} ...".format(proc.name()))
-            proc.terminate()
-            wait_process_exit_time = 3
-            time.sleep(wait_process_exit_time)
+    await stop_service()
 
-            if proc.is_running():
-                proc.kill()
+    wait_stop_time = 3
+    await asyncio.sleep(wait_stop_time)
 
-            if proc.is_running():
-                logging.warning("Process killed but still running! service: {}, pid: {}"
-                                .format(proc.name(), proc.pid))
-            else:
-                print("Service stopped!")
-
-    if not any_service_stopped:
-        print("No service found, stop nothing!")
-
-
-def daemon_stop_common():
-    any_service_stopped = False
-
-    for proc in psutil.process_iter(attrs=["pid", "name", "cmdline"]):
-        if proc.name().startswith(HFFS_EXEC_NAME) and "daemon" in proc.cmdline() and "start" in proc.cmdline():
-            any_service_stopped = True
-
-            logging.info("Try to stop service {} ...".format(proc.name()))
-            proc.terminate()
-            wait_process_exit_time = 3
-            time.sleep(wait_process_exit_time)
-
-            if proc.is_running():
-                proc.kill()
-
-            if proc.is_running():
-                logging.warning("Process killed but still running! service: {}, pid: {}"
-                                .format(proc.name(), proc.pid))
-            else:
-                print("Service stopped!")
-
-    if not any_service_stopped:
-        print("No service found, stop nothing!")
-
-
-def daemon_stop():
-    if platform.system() in ["Darwin"]:
-        daemon_stop_on_mac()
-    else:
-        daemon_stop_common()
+    if await is_service_running():
+        raise LookupError("Stopped service but still running, check service or retry!")

@@ -55,15 +55,15 @@ async def model_cmd(args):
 async def daemon_cmd(args):
     if args.daemon_command == "start":
         if args.daemon == "true":
-            daemon_start(args)
+            await daemon_start(args)
         else:
             await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
-        daemon_stop()
+        await daemon_stop()
 
 
-def uninstall_cmd():
-    uninstall_hffs()
+async def uninstall_cmd():
+    await uninstall_hffs()
 
 
 async def exec_cmd(args, parser):
@@ -75,12 +75,14 @@ async def exec_cmd(args, parser):
         elif args.command == "daemon":
             await daemon_cmd(args)
         elif args.command == "uninstall":
-            uninstall_cmd()
+            await uninstall_cmd()
         else:
             raise ValueError("Invalid command")
     except ValueError as e:
         print("{}".format(e))
         parser.print_usage()
+    except Exception as e:
+        print(f"{e}")
 
 
 def arg_parser():
