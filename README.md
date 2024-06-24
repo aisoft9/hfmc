@@ -4,7 +4,7 @@ HuggingFace FS (简称 "HFFS") 目标成为一款“小而美”的工具，帮�
 
 中国大陆用户需要配置代理服务才能访问 HuggingFace 主站。大陆地区和 HuggingFace 主站之间的网络带宽较低而且不稳定，可靠的镜像网站很少，模型文件又很大。因此，下载 HuggingFace 上模型文件的时间往往很长。HFFS 在 hf.co 的基础上增加了 P2P 的模型共享方式，让大陆地区用户能够以更快的速度获得所需要的模型。
 
-![HFFS Diagram](resources/hffs-readme-diagram.png)
+![HFFS Diagram](https://raw.githubusercontent.com/sg-c/huggingface-fs/main/resources/hffs-readme-diagram.png)
 
 HFFS 的典型使用场景有：
 
