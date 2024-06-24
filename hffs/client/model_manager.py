@@ -76,6 +76,9 @@ def _rm(repo_id, file_name, revision="main"):
     _assume(file_name, "Missing file_name")
     _assume(revision, "Missing revision")
 
+    if os.path.isabs(file_name):
+        raise LookupError("File path is path relative to repo, not the path in operating system!")
+
     # match cached repo
     cache_info = scan_cache_dir(HFFS_MODEL_DIR)
     repo_info = _match_repo(cache_info, repo_id)
