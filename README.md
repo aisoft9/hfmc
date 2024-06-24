@@ -11,7 +11,7 @@ HFFS 的典型使用场景有：
 
 下面是 HFFS 所提供的命令行文档。看看它们是如何帮助用户访问模型文件的吧。
 
-![[resources/hffs-readme-diagram.png]]
+![HFFS Diagram](resources/hffs-readme-diagram.png)
 
 ## 安装 HFFS
 
