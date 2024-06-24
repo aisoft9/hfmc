@@ -11,34 +11,18 @@ HFFS 的典型使用场景有：
 
 下面是 HFFS 所提供的命令行文档。看看它们是如何帮助用户访问模型文件的吧。
 
-## 快速开始
+![[resources/hffs-readme-diagram.png]]
+
+## 安装 HFFS
 
 > [!NOTE]
 > 确保你安装了 Python 3.11+ 版本并且安装了 pip。
+> 可以考虑使用 [Miniconda](https://docs.anaconda.com/miniconda/miniconda-install/) 安装和管理不同版本的 Python。
+> pip 的使用见[这里](https://pip.pypa.io/en/stable/cli/pip_install/)。
 
-1. 安装
-
-   ```bash
-   pip install hffs-0.0.1-py3-none-any.whl
-   ```
-
-2. 启动服务
-
-   ```bash
-   hffs daemon start
-   ```
-
-3. 添加加速节点(局域网内共享模型文件的其他主机IP)
-
-   ```bash
-   hffs peer add 192.168.0.2
-   ```
-
-4. 下载模型文件
-
-   ```bash
-   hffs model add google/timesfm-1.0-200m README.md
-   ```
+```bash
+pip install hffs
+```
 
 ## HFFS 的命令行
 
@@ -110,13 +94,13 @@ hffs model ls [--repo_id REPO_ID] [--file FILE_]
 ```
 
 扫描已经下载的模型。该命令返回如下信息：
-- 如果没有指定 REPO_ID，返回 repo 列表
-   - repo-id 的 [相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
-- 如果制定了 REPO_ID，但是没有指定 FILE，返回 repo 中所有缓存的文件
-   - FILE 是模型文件相对 git root 目录的相对路径
-- 如果同时制定了 REPO_ID 和 FILE，返回指定文件的路径
-   - 在 Unix-like 的操作系统中，由于缓存内部使用了软连接的方式保存文件，所以文件在git中的路径和缓存中的路径不同，该命令返回缓存中的文件路径
 
+- 如果没有指定 REPO_ID，返回 repo 列表
+  - repo-id 的 [相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
+- 如果制定了 REPO_ID，但是没有指定 FILE，返回 repo 中所有缓存的文件
+  - FILE 是模型文件相对 git root 目录的相对路径
+- 如果同时制定了 REPO_ID 和 FILE，返回指定文件的路径
+  - 在 Unix-like 的操作系统中，由于缓存内部使用了软连接的方式保存文件，所以文件在 git 中的路径和缓存中的路径不同，该命令返回缓存中的文件路径
 
 #### 添加模型
 
@@ -156,4 +140,3 @@ hffs uninstall
 # 卸载软件包
 pip uninstall hffs
 ```
-
