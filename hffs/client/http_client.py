@@ -9,6 +9,7 @@ import logging
 from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
 from ..common.settings import load_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
+from ..common.settings import HFFS_API_STATUS, HFFS_API_STOP
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,31 @@ async def notify_peer_change(timeout=2):
         logger.error("Please check the error, usually caused by local service not start!")
 
 
-async def stop_server():
-    """Send HTTP request to ask the server to stop"""
-    pass
+async def get_service_status():
+    port = load_local_service_port()
+    url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_STATUS
+    timeout = 5
+
+    try:
+        async with timeout_sess(timeout) as session:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise ValueError(f"Server response not 200 OK! status: {response.status}")
+                else:
+                    return await response.json()
+    except (TimeoutError, ConnectionError, aiohttp.client_exceptions.ClientConnectionError):
+        raise ConnectionError("Connect server failed or timeout")
+
+
+async def post_stop_service():
+    port = load_local_service_port()
+    url = f"http://{LOCAL_HOST}:{port}" + HFFS_API_STOP
+    timeout = 5
+
+    try:
+        async with timeout_sess(timeout) as session:
+            async with session.post(url) as response:
+                if response.status != 200:
+                    raise ValueError(f"Server response not 200 OK! status: {response.status}")
+    except (TimeoutError, ConnectionError, aiohttp.client_exceptions.ClientConnectionError):
+        raise ConnectionError("Connect server failed or timeout")

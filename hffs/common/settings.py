@@ -17,6 +17,8 @@ HFFS_EXEC_NAME = "hffs"
 HFFS_API_PING = "/hffs_api/ping"
 HFFS_API_ALIVE_PEERS = "/hffs_api/alive_peers"
 HFFS_API_PEER_CHANGE = "/hffs_api/peer_change"
+HFFS_API_STATUS = "/hffs_api/status"
+HFFS_API_STOP = "/hffs_api/stop"
 
 
 def save_local_service_port(port):

@@ -1,10 +1,12 @@
 import asyncio
+import json
 import os
 import logging
 import re
 
 from aiohttp import web
 from aiohttp import streamer
+from aiohttp.web_runner import GracefulExit
 from contextvars import ContextVar
 
 import huggingface_hub as hf
@@ -12,6 +14,7 @@ from .peer_prober import PeerProber
 from ..common.peer_store import PeerStore
 from ..common.hf_adapter import file_in_cache
 from ..common.settings import save_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
+from ..common.settings import HFFS_API_STATUS, HFFS_API_STOP
 
 ctx_var_peer_prober = ContextVar("PeerProber")
 
@@ -151,6 +154,18 @@ async def on_peer_change(_):
     return web.Response(status=200)
 
 
+async def get_service_status(_):
+    return web.json_response(data={})
+
+
+async def post_stop_service(request):
+    resp = web.Response()
+    await resp.prepare(request)
+    await resp.write_eof()
+    logging.warning("Received exit request, exit server!")
+    raise GracefulExit()
+
+
 async def start_server_safe(port):
     # set up context before starting the server
     peers = get_peers()
@@ -173,6 +188,9 @@ async def start_server_safe(port):
     app.router.add_get(HFFS_API_PEER_CHANGE, on_peer_change)
     app.router.add_get(
         '/{user}/{model}/resolve/{revision}/{file_name:.*}', download_file)
+
+    app.router.add_get(HFFS_API_STATUS, get_service_status)
+    app.router.add_post(HFFS_API_STOP, post_stop_service)
 
     # start web server
     runner = web.AppRunner(app)

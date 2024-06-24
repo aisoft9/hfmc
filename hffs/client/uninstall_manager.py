@@ -8,7 +8,7 @@ from ..common.settings import HFFS_HOME
 from .daemon_manager import daemon_stop
 
 
-def uninstall_hffs():
+async def uninstall_hffs():
     logging.warning("WARNING: will delete all hffs data on disk, can't recovery it!")
 
     logging.info("\n{}\n".format(HFFS_HOME))
@@ -25,7 +25,7 @@ def uninstall_hffs():
         logging.info("Canceled uninstall!")
         return
 
-    daemon_stop()
+    await daemon_stop()
     shutil.rmtree(HFFS_HOME, ignore_errors=True)
 
     print("Uninstall success!")
