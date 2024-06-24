@@ -29,10 +29,10 @@ HFFS 的典型使用场景有：
 > pip 的使用见[这里](https://pip.pypa.io/en/stable/cli/pip_install/)。
 
 ```bash
-pip install hffs
+pip install -i https://test.pypi.org/simple/ hffs
 ```
 
-## HFFS 的命令行
+## HFFS 命令
 
 ### HFFS Daemon 服务管理
 
@@ -113,6 +113,21 @@ hffs model ls [--repo_id REPO_ID] [--file FILE]
   - 用户可以使用该绝对路径访问模型文件
   - 注意：在 Unix-like 的操作系统中，由于缓存内部使用了软连接的方式保存文件，目标模型文件的 git 路径以及文件系统中的路径别没有直接关系
 
+#### 搜索模型
+
+```bash
+
+hffs model search REPO_ID FILE [--revision REVISION]
+
+```
+
+搜索目标模型文件在哪些 peer 上已经存在。
+
+- 如果模型还未下载到本地，从 peer 节点或者 hf.co 下载目标模型
+- `REPO_ID`参数说明见`hffs model ls`命令
+- `FILE`参数说明见`hffs model ls`命令
+- `REVISION`的[相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
+
 #### 添加模型
 
 ```bash
@@ -126,7 +141,7 @@ hffs model add REPO_ID FILE [--revision REVISION]
 - 如果模型还未下载到本地，从 peer 节点或者 hf.co 下载目标模型
 - `REPO_ID`参数说明见`hffs model ls`命令
 - `FILE`参数说明见`hffs model ls`命令
-- `REVISION`的[相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
+- `REVISION`参数说明见`hffs model search`命令
 
 #### 删除模型
 
