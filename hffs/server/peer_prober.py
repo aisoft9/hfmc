@@ -26,9 +26,11 @@ class PeerProber:
             heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
 
     def _do_update_peers(self):
-        if self._updates:
+        if self._updates is not None:
+            peers_removed = self._peers - self._updates
             self._peers = self._updates
             self._updates = None
+            self._actives = self._actives - peers_removed
             self._reset_peer_heap()
 
     async def start_probe(self):
@@ -55,7 +57,7 @@ class PeerProber:
                 peer = task.result()
                 if isinstance(peer, Peer):
                     heapq.heappush(self._probe_heap, (peer.get_epoch(), peer))
-                    if peer.is_alive():
+                    if peer.is_alive() and peer in self._peers:
                         self._actives.add(peer)
                     else:
                         self._actives.discard(peer)
