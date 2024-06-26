@@ -18,7 +18,7 @@ async def is_service_running():
     try:
         _ = await get_service_status()
         return True
-    except ConnectionError:
+    except (ConnectionError, LookupError):
         return False
     except Exception as e:
         logging.info(f"If error not caused by service not start, may need check it! ERROR: {e}")
@@ -29,7 +29,7 @@ async def stop_service():
     try:
         await post_stop_service()
         logging.info("Service stopped success!")
-    except ConnectionError:
+    except (ConnectionError, LookupError):
         logging.info("Can not connect to service, may already stopped!")
     except Exception as e:
         raise SystemError(f"Failed to stop service! ERROR: {e}")
@@ -64,9 +64,9 @@ async def daemon_start(args):
     await asyncio.sleep(wait_start_time)
 
     if await is_service_running():
-        logging.info("Daemon process started successfully")
+        logging.info("Service start success")
     else:
-        raise LookupError("Daemon start but not running, check service or retry!")
+        raise LookupError("Service start but not running, check service or retry!")
 
 
 async def daemon_stop():

@@ -140,7 +140,7 @@ def logging_level():
 
 def logging_handler(args):
     # daemon's logs go to log files, others go to stdout
-    if args.command == "daemon" and args.daemon_command == "start":
+    if args.command == "daemon" and args.daemon_command == "start" and args.daemon == "false":
         os.makedirs(HFFS_LOG_DIR, exist_ok=True)
         log_path = os.path.join(HFFS_LOG_DIR, "hffs.log")
         handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
@@ -167,6 +167,7 @@ def setup_logging(args):
 
     # suppress lib's info log
     logging.getLogger('asyncio').setLevel(logging.WARNING)
+    logging.getLogger('aiohttp').setLevel(logging.WARNING)
 
 
 async def async_main():
