@@ -12,7 +12,7 @@ from .client.model_manager import ModelManager
 from .client.peer_manager import PeerManager
 from .server import http_server
 from .common.settings import HFFS_LOG_DIR
-from .client.daemon_manager import daemon_start, daemon_stop
+from .client.daemon_manager import daemon_start, daemon_stop, daemon_status
 from .client.uninstall_manager import uninstall_hffs
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,10 @@ async def daemon_cmd(args):
             await http_server.start_server(args.port)
     elif args.daemon_command == "stop":
         await daemon_stop()
+    elif args.daemon_command == "status":
+        await daemon_status()
+    else:
+        raise ValueError("Invalid subcommand")
 
 
 async def uninstall_cmd():
@@ -96,6 +100,7 @@ def arg_parser():
     daemon_start_parser.add_argument('--port', type=int, default=9009)
     daemon_start_parser.add_argument("--daemon", type=str, default="true")
     daemon_subparsers.add_parser('stop')
+    daemon_subparsers.add_parser('status')
 
     # hffs peer {add,rm,ls} IP [--port port]
     peer_parser = subparsers.add_parser('peer')

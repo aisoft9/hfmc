@@ -81,3 +81,10 @@ async def daemon_stop():
 
     if await is_service_running():
         raise LookupError("Stopped service but still running, check service or retry!")
+
+
+async def daemon_status():
+    if await is_service_running():
+        logging.info("Service running.")
+    else:
+        logging.info("Service stopped.")
