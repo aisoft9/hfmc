@@ -7,15 +7,17 @@ import logging
 import sys
 
 from .common.peer_store import PeerStore
-from .client import http_client
 from .client.model_manager import ModelManager
 from .client.peer_manager import PeerManager
 from .server import http_server
 from .common.settings import HFFS_LOG_DIR
 from .client.daemon_manager import daemon_start, daemon_stop, daemon_status
+from .client.conf_manager import conf_cache_set, conf_cache_get, conf_cache_reset
+
 from .client.uninstall_manager import uninstall_hffs
 
 logger = logging.getLogger(__name__)
+INVALID_SUBCOMMAND = "Invalid subcommand"
 
 
 async def peer_cmd(args):
@@ -29,7 +31,7 @@ async def peer_cmd(args):
         elif args.peer_command == "ls":
             await peer_manager.list_peers()
         else:  # no matching subcmd
-            raise ValueError("Invalid subcommand")
+            raise ValueError(INVALID_SUBCOMMAND)
 
     if args.peer_command in ("add", "rm"):
         await peer_manager.notify_peer_change()
@@ -49,7 +51,7 @@ async def model_cmd(args):
         model_manager.rm(args.repo_id, revision=args.revision,
                          file_name=args.file)
     else:
-        raise ValueError("Invalid subcommand")
+        raise ValueError(INVALID_SUBCOMMAND)
 
 
 async def daemon_cmd(args):
@@ -66,6 +68,24 @@ async def daemon_cmd(args):
         raise ValueError("Invalid subcommand")
 
 
+async def conf_cache_cmd(args):
+    if args.conf_cache_command == "set":
+        await conf_cache_set(args.path)
+    elif args.conf_cache_command == "get":
+        await conf_cache_get()
+    elif args.conf_cache_command == "reset":
+        await conf_cache_reset()
+    else:
+        raise ValueError(INVALID_SUBCOMMAND)
+
+
+async def conf_cmd(args):
+    if args.conf_command == "cache":
+        await conf_cache_cmd(args)
+    else:
+        raise ValueError(INVALID_SUBCOMMAND)
+
+
 async def uninstall_cmd():
     await uninstall_hffs()
 
@@ -78,6 +98,8 @@ async def exec_cmd(args, parser):
             await model_cmd(args)
         elif args.command == "daemon":
             await daemon_cmd(args)
+        elif args.command == "conf":
+            await conf_cmd(args)
         elif args.command == "uninstall":
             await uninstall_cmd()
         else:
@@ -130,6 +152,15 @@ def arg_parser():
     model_search_parser.add_argument('repo_id')
     model_search_parser.add_argument('file')
     model_search_parser.add_argument('--revision', type=str, default="main")
+
+    conf_parser = subparsers.add_parser('conf')
+    conf_subparsers = conf_parser.add_subparsers(dest='conf_command')
+    conf_cache_parser = conf_subparsers.add_parser('cache')
+    conf_cache_subparsers = conf_cache_parser.add_subparsers(dest='conf_cache_command')
+    conf_cache_set_parser = conf_cache_subparsers.add_parser('set')
+    conf_cache_set_parser.add_argument('path')
+    conf_cache_subparsers.add_parser('get')
+    conf_cache_subparsers.add_parser('reset')
 
     # hffs uninstall
     subparsers.add_parser('uninstall')

@@ -4,15 +4,20 @@
 import logging
 import shutil
 
-from ..common.settings import HFFS_HOME
+from ..common.settings import HFFS_ROOT, HFFS_HOME
 from .daemon_manager import daemon_stop
 
 
 async def uninstall_hffs():
     logging.warning("WARNING: will delete all hffs data on disk, can't recovery it!")
 
-    logging.info("\n{}\n".format(HFFS_HOME))
+    rm_dir_list = [HFFS_ROOT, HFFS_HOME]
+    logging.info("")
 
+    for d in rm_dir_list:
+        logging.info(d)
+
+    logging.info("")
     first_confirm = input("UP directory will be delete! Enter y/Y to confirm:")
 
     if first_confirm not in ["y", "Y"]:
@@ -26,7 +31,8 @@ async def uninstall_hffs():
         return
 
     await daemon_stop()
-    shutil.rmtree(HFFS_HOME, ignore_errors=True)
+
+    for d in rm_dir_list:
+        shutil.rmtree(d, ignore_errors=True)
 
     print("Uninstall success!")
-

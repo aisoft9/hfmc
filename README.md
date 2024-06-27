@@ -167,6 +167,36 @@ hffs model rm REPO_ID FILE [--revision REVISION]
 - `FILE`参数说明见`hffs model ls`命令
 - `REVISION`的[相关文档](https://huggingface.co/docs/hub/en/api#get-apimodelsrepoid-or-apimodelsrepoidrevisionrevision)
 
+### 配置管理
+
+#### 工作目录管理
+
+##### 工作目录设置
+
+```bash
+hffs conf cache set HOME_PATH
+```
+
+设置服务的工作目录，包括配置存放目录和文件下载目录
+
+- `HOME_PATH` 工作目录的路径，路径必须已存在
+
+##### 工作目录获取
+
+```bash
+hffs conf cache get
+```
+
+获取当前生效的工作目录。注意：此路径非set设置的路径，环境变量会覆盖set设置的路径。
+
+##### 工作目录重置
+
+```bash
+hffs conf cache reset
+```
+
+恢复配置的工作目录路径为默认路径。注意：此操作无法重置环境变量的设置。
+
 ### 卸载管理
 
 #### 卸载软件
