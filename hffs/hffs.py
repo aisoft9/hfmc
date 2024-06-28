@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 INVALID_SUBCOMMAND = "Invalid subcommand"
 
 
+class InvalidCommandException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
 async def peer_cmd(args):
     with PeerStore() as store:
         peer_manager = PeerManager(store)
@@ -31,7 +39,7 @@ async def peer_cmd(args):
         elif args.peer_command == "ls":
             await peer_manager.list_peers()
         else:  # no matching subcmd
-            raise ValueError(INVALID_SUBCOMMAND)
+            raise InvalidCommandException(INVALID_SUBCOMMAND)
 
     if args.peer_command in ("add", "rm"):
         await peer_manager.notify_peer_change()
@@ -51,7 +59,7 @@ async def model_cmd(args):
         model_manager.rm(args.repo_id, revision=args.revision,
                          file_name=args.file)
     else:
-        raise ValueError(INVALID_SUBCOMMAND)
+        raise InvalidCommandException(INVALID_SUBCOMMAND)
 
 
 async def daemon_cmd(args):
@@ -65,7 +73,7 @@ async def daemon_cmd(args):
     elif args.daemon_command == "status":
         await daemon_status()
     else:
-        raise ValueError("Invalid subcommand")
+        raise InvalidCommandException(INVALID_SUBCOMMAND)
 
 
 async def conf_cache_cmd(args):
@@ -76,14 +84,14 @@ async def conf_cache_cmd(args):
     elif args.conf_cache_command == "reset":
         await conf_cache_reset()
     else:
-        raise ValueError(INVALID_SUBCOMMAND)
+        raise InvalidCommandException(INVALID_SUBCOMMAND)
 
 
 async def conf_cmd(args):
     if args.conf_command == "cache":
         await conf_cache_cmd(args)
     else:
-        raise ValueError(INVALID_SUBCOMMAND)
+        raise InvalidCommandException(INVALID_SUBCOMMAND)
 
 
 async def uninstall_cmd():
@@ -103,8 +111,8 @@ async def exec_cmd(args, parser):
         elif args.command == "uninstall":
             await uninstall_cmd()
         else:
-            raise ValueError("Invalid command")
-    except ValueError as e:
+            raise InvalidCommandException("Invalid command")
+    except InvalidCommandException as e:
         print("{}".format(e))
         parser.print_usage()
     except Exception as e:
