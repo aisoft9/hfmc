@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-#-*- encoding: UTF-8 -*-
+"""HFFS main."""
 
 from hffs.hffs import main
 
