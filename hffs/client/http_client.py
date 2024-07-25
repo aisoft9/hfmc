@@ -87,6 +87,58 @@ async def search_coro(peer, repo_id, revision, file_name):
         return None
 
 
+async def peers_execute(peers, func):
+    tasks = []
+
+    def all_finished(tasks):
+        return all([task.done() for task in tasks])
+
+    async with asyncio.TaskGroup() as g:
+        for peer in peers:
+            coro = func(peer)
+            tasks.append(g.create_task(coro))
+
+        while not all_finished(tasks):
+            await asyncio.sleep(1)
+            print(".", end="")
+
+        # add new line after the dots
+        print("")
+
+    return [task.result() for task in tasks if task.result() is not None]
+
+
+async def get_hf_repo_info(endpoint, repo_id, revision):
+    async with timeout_sess(10) as session:
+        if revision:
+            async with session.get(f"{endpoint}/api/models/{repo_id}/revision/{revision}") as \
+                    response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise ValueError("HTTP response error! code: {}, reason: {}"
+                                     .format(response.status, response.reason))
+        else:
+            async with session.get(f"{endpoint}/api/models/{repo_id}") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise ValueError("HTTP response error! code: {}, reason: {}"
+                                     .format(response.status, response.reason))
+
+
+async def peers_search(peers, search_func):
+    if not peers:
+        logger.info("No active peers to search")
+        return []
+
+    logger.info("Will check the following peers:")
+    logger.info(Peer.print_peers(peers))
+    avails = await peers_execute(peers, search_func)
+
+    return avails
+
+
 async def do_search(peers, repo_id, revision, file_name):
     tasks = []
 
@@ -108,7 +160,7 @@ async def do_search(peers, repo_id, revision, file_name):
     return [task.result() for task in tasks if task.result() is not None]
 
 
-async def search_model(peers, repo_id, file_name, revision):
+async def search_model_file(peers, repo_id, file_name, revision):
     if not peers:
         logger.info("No active peers to search")
         return []
@@ -121,6 +173,19 @@ async def search_model(peers, repo_id, file_name, revision):
     logger.info("Peers who have the model:")
     logger.info(Peer.print_peers(avails))
 
+    return avails
+
+
+async def search_full_model(peers, repo_id, revision):
+    async def get_peer_hf_repo_info(peer):
+        try:
+            repo_info = await get_hf_repo_info(f"http://{peer.ip}:{peer.port}", repo_id, revision)
+            return peer, repo_info
+        except Exception:
+            return None
+
+    avail_peers_repo_info = await peers_search(peers, get_peer_hf_repo_info)
+    avails = [peer for (peer, repo_files) in avail_peers_repo_info]
     return avails
 
 

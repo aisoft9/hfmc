@@ -3,13 +3,14 @@
 
 import os
 import logging
+import shutil
 from pathlib import Path
 
 from prettytable import PrettyTable
 from huggingface_hub import scan_cache_dir, hf_hub_download, CachedRevisionInfo, CachedRepoInfo, HFCacheInfo
 from . import http_client
 from ..common.settings import HFFS_MODEL_DIR
-from ..common.hf_adapter import save_etag
+from ..common.hf_adapter import save_etag, save_repo_info
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,23 @@ def _match_file(rev_info: CachedRevisionInfo, file_name: str):
     return None
 
 
+def blob_has_multi_links(revisions, blob_path):
+    same_blob_count = 0
+
+    for rev in revisions:
+        for f in rev.files:
+            if f.blob_path == blob_path:
+                same_blob_count = same_blob_count + 1
+
+            if same_blob_count > 1:
+                break
+
+        if same_blob_count > 1:
+            break
+
+    return same_blob_count > 1
+
+
 def _rm(repo_id, file_name, revision="main"):
     # check necessary arguments
     _assume(repo_id, "Missing repo_id")
@@ -99,9 +117,10 @@ def _rm(repo_id, file_name, revision="main"):
 
     # remove blob file, on platform not support symbol link, there are equal
     if file_info.blob_path != file_info.file_path:
-        _rm_file(file_info.blob_path,
-                 repo_info.repo_path / "blobs",
-                 "Remove blob")
+        if not blob_has_multi_links(repo_info.revisions, file_info.blob_path):
+            _rm_file(file_info.blob_path,
+                     repo_info.repo_path / "blobs",
+                     "Remove blob")
 
     # if the snapshot dir is not longer existing, it means that the
     # revision is deleted entirely, hence all the refs pointing to
@@ -162,11 +181,30 @@ class ModelManager:
             os.makedirs(HFFS_MODEL_DIR)
 
     async def search_model(self, repo_id, file_name, revision="main"):
+        if file_name:
+            await self.search_model_file(repo_id, file_name, revision)
+        else:
+            await self.search_full_model(repo_id, revision)
+
+    async def search_model_file(self, repo_id, file_name, revision="main"):
         active_peers = await http_client.alive_peers()
-        avail_peers = await http_client.search_model(active_peers, repo_id, file_name, revision)
+        avail_peers = await http_client.search_model_file(active_peers, repo_id, file_name, revision)
         return (active_peers, avail_peers)
 
+    async def search_full_model(self, repo_id, revision):
+        active_peers = await http_client.alive_peers()
+        avail_peers = await http_client.search_full_model(active_peers, repo_id, revision)
+        logger.info("Peers who have the model revision:")
+        logger.info(f"{avail_peers}")
+        return avail_peers
+
     async def add(self, repo_id, file_name, revision="main"):
+        if file_name:
+            return await self.add_file(repo_id, file_name, revision)
+        else:
+            return await self.add_full_model(repo_id, revision)
+
+    async def add_file(self, repo_id, file_name, revision="main"):
         async def do_download(endpoint):
             path = None
 
@@ -194,34 +232,69 @@ class ModelManager:
 
             return True, path
 
-        if not file_name:
-            raise ValueError(
-                "Current not support download full repo, file name must be provided!")
-
-        _, avails = await self.search_model(repo_id, file_name, revision)
+        _, avails = await self.search_model_file(repo_id, file_name, revision)
 
         for peer in avails:
             done, path = await do_download(f"http://{peer.ip}:{peer.port}")
             if done:
                 logger.info(f"Download successfully: {path}")
-                return
+                return True
 
         logger.info("Cannot download from peers; try mirror sites")
 
         done, path = await do_download("https://hf-mirror.com")
         if done:
             logger.info(f"Download successfully: {path}")
-            return
+            return True
 
         logger.info("Cannot download from mirror site; try hf.co")
 
         done, path = await do_download("https://huggingface.co")
         if done:
             logger.info(f"Download successfully: {path}")
-            return
+            return True
 
         logger.info(
             "Cannot find target model in hf.co; double check the model info")
+
+        return False
+
+    async def download_repo_files(self, endpoint, repo_id, revision):
+        repo_info = await http_client.get_hf_repo_info(endpoint, repo_id, revision)
+
+        assert repo_info is not None, f"Repo info returned from {endpoint} is None."
+        assert repo_info.get("sha") is not None, "Repo info returned from server must have a revision sha."
+        assert repo_info.get("siblings") is not None, "Repo info returned from server must have a siblings list."
+
+        repo_files = [f.get("rfilename") for f in repo_info.get("siblings")]
+
+        for f in repo_files:
+            add_success = await self.add_file(repo_id=repo_id, file_name=f, revision=repo_info.get("sha"))
+
+            if not add_success:
+                raise LookupError("Failed to download file! repo: {0}, revision: {1}, file name: {2}."
+                                  .format(repo_id, repo_info.get("sha"), f))
+
+        save_repo_info(repo_info, repo_id, repo_info.get("sha"))
+
+    async def add_full_model(self, repo_id, revision="main"):
+        avail_peers = await self.search_full_model(repo_id, revision)
+        to_download_site = []
+
+        if avail_peers:
+            select_peer = avail_peers[0]
+            to_download_site.append(f"http://{select_peer.ip}:{select_peer.port}")
+
+        to_download_site.extend(["https://hf-mirror.com", "https://huggingface.co"])
+
+        for site in to_download_site:
+            try:
+                logger.info(f"Start to download repo from {site}!")
+                await self.download_repo_files(endpoint=site, repo_id=repo_id, revision=revision)
+                logger.info(f"Success download model {repo_id}")
+                return
+            except Exception as e:
+                logger.info(f"Failed to download repo from {site}! ERROR: {e}")
 
     def ls(self, repo_id):
         if not repo_id:
@@ -229,9 +302,73 @@ class ModelManager:
         else:
             _ls_repo_files(repo_id)
 
-    def rm(self, repo_id, file_name, revision="main"):
+    def rm(self, repo_id, file_name, revision):
+        if file_name:
+            if revision:
+                self.rm_file(repo_id, file_name, revision)
+            else:
+                self.rm_file(repo_id, file_name, "main")
+        else:
+            if revision:
+                self.rm_model_revision(repo_id, revision)
+            else:
+                self.rm_model(repo_id)
+
+    def rm_file(self, repo_id, file_name, revision="main"):
         try:
             _rm(repo_id, file_name, revision)
             logger.info("Success to delete file!")
         except ValueError:
             logger.info("Failed to remove model")
+
+    def rm_model(self, repo_id):
+        assert repo_id is not None, "Repo id can not be None!"
+
+        cache_info = scan_cache_dir(HFFS_MODEL_DIR)
+        repo_info = _match_repo(cache_info, repo_id)
+        _assume(repo_info, "No matched repo!")
+
+        repo_path = repo_info.repo_path
+        logger.info(repo_path)
+
+        confirm = input("UP path will be delete! Please entry [y/Y] to confirm: ")
+
+        if confirm not in ['y', 'Y']:
+            logger.info("Remove repo canceled!")
+            return
+
+        shutil.rmtree(repo_path, ignore_errors=True)
+        logger.info("Remove success!")
+
+    def rm_model_revision(self, repo_id, revision):
+        assert repo_id is not None, "Repo id can not be None!"
+        assert revision is not None, "Repo revision can not be None!"
+
+        cache_info = scan_cache_dir(HFFS_MODEL_DIR)
+        repo_info = _match_repo(cache_info, repo_id)
+        _assume(repo_info, "No matched repo!")
+
+        matched_revs_commit_hash = list(
+            map(
+                lambda rev: rev.commit_hash,
+                filter(
+                    lambda rev: revision in rev.refs or rev.commit_hash.startswith(revision), repo_info.revisions
+                )
+            )
+        )
+
+        _assume(matched_revs_commit_hash, "No matched revision!")
+
+        for commit_hash in matched_revs_commit_hash:
+            logger.info(commit_hash)
+
+        confirm = input("UP commit will be delete! Please enter [y/Y] to confirm: ")
+
+        if confirm not in ['y', 'Y']:
+            logger.info("Remove repo commit canceled!")
+            return
+
+        delete_strategy = cache_info.delete_revisions(*matched_revs_commit_hash)
+        delete_strategy.execute()
+
+        logger.info("Remove success!")

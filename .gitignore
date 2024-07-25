@@ -9,6 +9,7 @@ __pycache__/
 dist/
 build/
 *.egg
+*.eggs
 *.whl
 
 # Virtual Environment
@@ -19,6 +20,7 @@ ENV/
 # IDE
 .vscode/
 *.code-workspace
+*.idea
 
 # Miscellaneous
 *.log

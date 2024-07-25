@@ -12,7 +12,7 @@ from contextvars import ContextVar
 import huggingface_hub as hf
 from .peer_prober import PeerProber
 from ..common.peer_store import PeerStore
-from ..common.hf_adapter import file_in_cache
+from ..common.hf_adapter import file_in_cache, load_repo_revision_info
 from ..common.settings import save_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 from ..common.settings import HFFS_API_STATUS, HFFS_API_STOP
 
@@ -140,6 +140,36 @@ async def search_model(request):
         return web.Response(status=200, headers=headers)
 
 
+async def get_repo_info(request):
+    user = request.match_info['user']
+    model = request.match_info['model']
+    revision = "main"
+    repo_id = f"{user}/{model}"
+
+    try:
+        repo_info = load_repo_revision_info(repo_id, revision)
+        return web.json_response(data=repo_info)
+    except (LookupError, ValueError) as lve:
+        return web.Response(status=404, reason=f'{lve}')
+    except Exception as e:
+        return web.Response(status=500, reason=f'{e}')
+
+
+async def get_repo_revision_info(request):
+    user = request.match_info['user']
+    model = request.match_info['model']
+    revision = request.match_info['revision']
+    repo_id = f"{user}/{model}"
+
+    try:
+        repo_info = load_repo_revision_info(repo_id, revision)
+        return web.json_response(data=repo_info)
+    except (LookupError, ValueError) as lve:
+        return web.Response(status=404, reason=f'{lve}')
+    except Exception as e:
+        return web.Response(status=500, reason=f'{e}')
+
+
 def get_peers():
     peers = set()
     with PeerStore() as peer_store:
@@ -181,6 +211,9 @@ async def start_server_safe(port):
     # HEAD requests
     app.router.add_head(
         '/{user}/{model}/resolve/{revision}/{file_name:.*}', search_model)
+
+    app.router.add_get('/api/models/{user}/{model}', get_repo_info)
+    app.router.add_get('/api/models/{user}/{model}/revision/{revision}', get_repo_revision_info)
 
     # GET requests
     app.router.add_get(HFFS_API_PING, pong)
