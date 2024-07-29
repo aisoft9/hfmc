@@ -293,6 +293,9 @@ class ModelManager:
                 await self.download_repo_files(endpoint=site, repo_id=repo_id, revision=revision)
                 logger.info(f"Success download model {repo_id}")
                 return
+            except TimeoutError:
+                # timeout has no error str!
+                logger.info(f"Failed to download repo from {site}! ERROR: Timeout")
             except Exception as e:
                 logger.info(f"Failed to download repo from {site}! ERROR: {e}")
 
