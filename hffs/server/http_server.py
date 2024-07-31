@@ -15,6 +15,7 @@ from ..common.peer_store import PeerStore
 from ..common.hf_adapter import file_in_cache, load_repo_revision_info
 from ..common.settings import save_local_service_port, HFFS_API_PING, HFFS_API_PEER_CHANGE, HFFS_API_ALIVE_PEERS
 from ..common.settings import HFFS_API_STATUS, HFFS_API_STOP
+from ..client.noshare_manager import is_noshare_repo
 
 ctx_var_peer_prober = ContextVar("PeerProber")
 
@@ -85,6 +86,10 @@ async def download_file(request):
         return web.Response(body=err_msg, status=400)
 
     repo_id, file_name, revision = extract_model_info(request)
+
+    if is_noshare_repo(repo_id):
+        return web.Response(status=404)
+
     cached = file_in_cache(repo_id, file_name, revision)
 
     if not cached:
@@ -125,6 +130,10 @@ async def alive_peers(_):
 
 async def search_model(request):
     repo_id, file_name, revision = extract_model_info(request)
+
+    if is_noshare_repo(repo_id):
+        return web.Response(status=404)
+
     cached = file_in_cache(repo_id, file_name, revision)
 
     if not cached:
@@ -147,6 +156,8 @@ async def get_repo_info(request):
     repo_id = f"{user}/{model}"
 
     try:
+        if is_noshare_repo(repo_id):
+            return web.Response(status=404)
         repo_info = load_repo_revision_info(repo_id, revision)
         return web.json_response(data=repo_info)
     except (LookupError, ValueError) as lve:
@@ -162,6 +173,9 @@ async def get_repo_revision_info(request):
     repo_id = f"{user}/{model}"
 
     try:
+        if is_noshare_repo(repo_id):
+            return web.Response(status=404)
+
         repo_info = load_repo_revision_info(repo_id, revision)
         return web.json_response(data=repo_info)
     except (LookupError, ValueError) as lve:

@@ -5,6 +5,7 @@ import os
 import aiohttp
 import aiohttp.client_exceptions
 import logging
+from typing import Union
 
 from ..common.peer import Peer
 from huggingface_hub import hf_hub_url, get_hf_file_metadata
@@ -99,10 +100,15 @@ async def peers_execute(peers, func):
     return [res for res in tasks_result if res is not None]
 
 
-async def get_hf_repo_info(endpoint, repo_id, revision):
+async def get_hf_repo_info(endpoint, repo_id, token: Union[bool, str, None], revision):
+    hf_headers = dict()
+
+    if token:
+        hf_headers["authorization"] = f"Bearer {token}"
+
     async with timeout_sess(10) as session:
         if revision:
-            async with session.get(f"{endpoint}/api/models/{repo_id}/revision/{revision}") as \
+            async with session.get(f"{endpoint}/api/models/{repo_id}/revision/{revision}", headers=hf_headers) as \
                     response:
                 if response.status == 200:
                     return await response.json()
@@ -110,7 +116,7 @@ async def get_hf_repo_info(endpoint, repo_id, revision):
                     raise ValueError("HTTP response error! code: {}, reason: {}"
                                      .format(response.status, response.reason))
         else:
-            async with session.get(f"{endpoint}/api/models/{repo_id}") as response:
+            async with session.get(f"{endpoint}/api/models/{repo_id}", headers=hf_headers) as response:
                 if response.status == 200:
                     return await response.json()
                 else:
@@ -161,7 +167,7 @@ async def search_model_file(peers, repo_id, file_name, revision):
 async def search_full_model(peers, repo_id, revision):
     async def get_peer_hf_repo_info(peer):
         try:
-            repo_info = await get_hf_repo_info(f"http://{peer.ip}:{peer.port}", repo_id, revision)
+            repo_info = await get_hf_repo_info(f"http://{peer.ip}:{peer.port}", repo_id, None, revision)
             return peer, repo_info
         except Exception:
             return None
@@ -171,7 +177,7 @@ async def search_full_model(peers, repo_id, revision):
     return avails
 
 
-async def get_model_etag(endpoint, repo_id, filename, revision='main'):
+async def get_model_etag(endpoint, repo_id, filename, token: Union[bool, str, None], revision='main'):
     url = hf_hub_url(
         repo_id=repo_id,
         filename=filename,
@@ -179,7 +185,7 @@ async def get_model_etag(endpoint, repo_id, filename, revision='main'):
         endpoint=endpoint
     )
 
-    metadata = get_hf_file_metadata(url)
+    metadata = get_hf_file_metadata(url, token=token)
     return metadata.etag
 
 
