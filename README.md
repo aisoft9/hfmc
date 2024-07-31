@@ -27,7 +27,7 @@ HFFS 的典型使用场景有：
 ## 安装 HFFS
 
 > [!NOTE]
-> 确保你安装了 Python 3.11+ 版本并且安装了 pip。
+> 确保你安装了 Python 3.8+ 版本并且安装了 pip。
 > 可以考虑使用 [Miniconda](https://docs.anaconda.com/miniconda/miniconda-install/) 安装和管理不同版本的 Python。
 > pip 的使用见[这里](https://pip.pypa.io/en/stable/cli/pip_install/)。
 

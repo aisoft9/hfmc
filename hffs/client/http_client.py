@@ -90,22 +90,13 @@ async def search_coro(peer, repo_id, revision, file_name):
 async def peers_execute(peers, func):
     tasks = []
 
-    def all_finished(tasks):
-        return all([task.done() for task in tasks])
+    for peer in peers:
+        coro = func(peer)
+        tasks.append(coro)
 
-    async with asyncio.TaskGroup() as g:
-        for peer in peers:
-            coro = func(peer)
-            tasks.append(g.create_task(coro))
+    tasks_result = await asyncio.gather(*tasks)
 
-        while not all_finished(tasks):
-            await asyncio.sleep(1)
-            print(".", end="")
-
-        # add new line after the dots
-        print("")
-
-    return [task.result() for task in tasks if task.result() is not None]
+    return [res for res in tasks_result if res is not None]
 
 
 async def get_hf_repo_info(endpoint, repo_id, revision):
@@ -142,22 +133,13 @@ async def peers_search(peers, search_func):
 async def do_search(peers, repo_id, revision, file_name):
     tasks = []
 
-    def all_finished(tasks):
-        return all([task.done() for task in tasks])
+    for peer in peers:
+        coro = search_coro(peer, repo_id, revision, file_name)
+        tasks.append(coro)
 
-    async with asyncio.TaskGroup() as g:
-        for peer in peers:
-            coro = search_coro(peer, repo_id, revision, file_name)
-            tasks.append(g.create_task(coro))
+    tasks_result = await asyncio.gather(*tasks)
 
-        while not all_finished(tasks):
-            await asyncio.sleep(1)
-            print(".", end="")
-
-        # add new line after the dots
-        print("")
-
-    return [task.result() for task in tasks if task.result() is not None]
+    return [res for res in tasks_result if res is not None]
 
 
 async def search_model_file(peers, repo_id, file_name, revision):
