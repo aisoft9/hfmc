@@ -5,11 +5,13 @@ import os
 import logging
 import shutil
 from pathlib import Path
+from typing import Union
+import asyncio
 
 from prettytable import PrettyTable
 from huggingface_hub import scan_cache_dir, hf_hub_download, CachedRevisionInfo, CachedRepoInfo, HFCacheInfo
 from . import http_client
-from ..common.settings import HFFS_MODEL_DIR
+from ..common.settings import HFFS_MODEL_DIR, HFFS_TOKEN_ENV_KEY
 from ..common.hf_adapter import save_etag, save_repo_info
 
 logger = logging.getLogger(__name__)
@@ -198,13 +200,13 @@ class ModelManager:
         logger.info(f"{avail_peers}")
         return avail_peers
 
-    async def add(self, repo_id, file_name, revision="main"):
+    async def add(self, repo_id, file_name, token, revision="main"):
         if file_name:
-            return await self.add_file(repo_id, file_name, revision)
+            return await self.add_file(repo_id, file_name, token, revision)
         else:
-            return await self.add_full_model(repo_id, revision)
+            return await self.add_full_model(repo_id, token, revision)
 
-    async def add_file(self, repo_id, file_name, revision="main"):
+    async def add_file(self, repo_id, file_name, token: Union[bool, str, None], revision="main"):
         async def do_download(endpoint):
             path = None
 
@@ -213,14 +215,15 @@ class ModelManager:
                                        revision=revision,
                                        cache_dir=HFFS_MODEL_DIR,
                                        filename=file_name,
-                                       endpoint=endpoint)
+                                       endpoint=endpoint,
+                                       token=token)
             except Exception as e:
                 logger.info(
                     f"Failed to download model from {endpoint}. Reason: {e}")
                 return False, None
 
             try:
-                etag = await http_client.get_model_etag(endpoint, repo_id, file_name, revision)
+                etag = await http_client.get_model_etag(endpoint, repo_id, file_name, token, revision)
                 if not etag:
                     raise ValueError("ETag not found!")
                 save_etag(etag, repo_id, file_name, revision)
@@ -259,8 +262,8 @@ class ModelManager:
 
         return False
 
-    async def download_repo_files(self, endpoint, repo_id, revision):
-        repo_info = await http_client.get_hf_repo_info(endpoint, repo_id, revision)
+    async def download_repo_files(self, endpoint, repo_id, token: Union[bool, str, None], revision):
+        repo_info = await http_client.get_hf_repo_info(endpoint, repo_id, token, revision)
 
         assert repo_info is not None, f"Repo info returned from {endpoint} is None."
         assert repo_info.get("sha") is not None, "Repo info returned from server must have a revision sha."
@@ -269,7 +272,7 @@ class ModelManager:
         repo_files = [f.get("rfilename") for f in repo_info.get("siblings")]
 
         for f in repo_files:
-            add_success = await self.add_file(repo_id=repo_id, file_name=f, revision=repo_info.get("sha"))
+            add_success = await self.add_file(repo_id=repo_id, file_name=f, token=token, revision=repo_info.get("sha"))
 
             if not add_success:
                 raise LookupError("Failed to download file! repo: {0}, revision: {1}, file name: {2}."
@@ -277,7 +280,7 @@ class ModelManager:
 
         save_repo_info(repo_info, repo_id, repo_info.get("sha"))
 
-    async def add_full_model(self, repo_id, revision="main"):
+    async def add_full_model(self, repo_id, token: Union[bool, str, None], revision="main"):
         avail_peers = await self.search_full_model(repo_id, revision)
         to_download_site = []
 
@@ -285,15 +288,25 @@ class ModelManager:
             select_peer = avail_peers[0]
             to_download_site.append(f"http://{select_peer.ip}:{select_peer.port}")
 
-        to_download_site.extend(["https://hf-mirror.com", "https://huggingface.co"])
+        official_site = ["https://hf-mirror.com", "https://huggingface.co"]
+        to_download_site.extend(official_site)
 
         for site in to_download_site:
             try:
                 logger.info(f"Start to download repo from {site}!")
-                await self.download_repo_files(endpoint=site, repo_id=repo_id, revision=revision)
+                if site in official_site:
+                    to_use_token = token
+
+                    if not to_use_token:
+                        to_use_token = os.getenv(HFFS_TOKEN_ENV_KEY)
+
+                    await self.download_repo_files(endpoint=site, repo_id=repo_id, token=to_use_token,
+                                                   revision=revision)
+                else:
+                    await self.download_repo_files(endpoint=site, repo_id=repo_id, token=None, revision=revision)
                 logger.info(f"Success download model {repo_id}")
                 return
-            except TimeoutError:
+            except (TimeoutError, asyncio.TimeoutError):
                 # timeout has no error str!
                 logger.info(f"Failed to download repo from {site}! ERROR: Timeout")
             except Exception as e:

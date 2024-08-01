@@ -12,6 +12,7 @@ from .client.peer_manager import PeerManager
 from .server import http_server
 from .common.settings import HFFS_LOG_DIR
 from .client.daemon_manager import daemon_start, daemon_stop, daemon_status
+from .client.noshare_manager import noshare_add, noshare_ls, noshare_rm
 from .client.conf_manager import conf_cache_set, conf_cache_get, conf_cache_reset
 
 from .client.uninstall_manager import uninstall_hffs
@@ -52,12 +53,23 @@ async def model_cmd(args):
     if args.model_command == "search":
         await model_manager.search_model(args.repo_id, args.file, args.revision)
     elif args.model_command == "add":
-        await model_manager.add(args.repo_id, args.file, args.revision)
+        await model_manager.add(args.repo_id, args.file, args.token, args.revision)
     elif args.model_command == "ls":
         model_manager.ls(args.repo_id)
     elif args.model_command == "rm":
         model_manager.rm(args.repo_id, revision=args.revision,
                          file_name=args.file)
+    else:
+        raise InvalidCommandException(INVALID_SUBCOMMAND)
+
+
+async def noshare_cmd(args):
+    if args.noshare_command == "add":
+        noshare_add(args.repo_id)
+    elif args.noshare_command == "ls":
+        noshare_ls()
+    elif args.noshare_command == "rm":
+        noshare_rm(args.repo_id)
     else:
         raise InvalidCommandException(INVALID_SUBCOMMAND)
 
@@ -106,6 +118,8 @@ async def exec_cmd(args, parser):
             await model_cmd(args)
         elif args.command == "daemon":
             await daemon_cmd(args)
+        elif args.command == "noshare":
+            await noshare_cmd(args)
         elif args.command == "conf":
             await conf_cmd(args)
         elif args.command == "uninstall":
@@ -152,6 +166,7 @@ def arg_parser():
     model_add_parser.add_argument('repo_id')
     model_add_parser.add_argument('--file', type=str)
     model_add_parser.add_argument('--revision', type=str, default="main")
+    model_add_parser.add_argument('--token', type=str)
     model_rm_parser = model_subparsers.add_parser('rm')
     model_rm_parser.add_argument('repo_id')
     model_rm_parser.add_argument('--file', type=str)
@@ -160,6 +175,14 @@ def arg_parser():
     model_search_parser.add_argument('repo_id')
     model_search_parser.add_argument('--file', type=str)
     model_search_parser.add_argument('--revision', type=str, default="main")
+
+    noshare_parser = subparsers.add_parser('noshare')
+    noshare_subparsers = noshare_parser.add_subparsers(dest='noshare_command')
+    noshare_add_parser = noshare_subparsers.add_parser('add')
+    noshare_add_parser.add_argument('repo_id')
+    noshare_subparsers.add_parser('ls')
+    noshare_rm_parser = noshare_subparsers.add_parser('rm')
+    noshare_rm_parser.add_argument('repo_id')
 
     conf_parser = subparsers.add_parser('conf')
     conf_subparsers = conf_parser.add_subparsers(dest='conf_command')
