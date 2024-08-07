@@ -235,7 +235,7 @@ def file_list(repo_id: str) -> List[FileInfo]:
                 f.file_path.relative_to(rev.snapshot_path),
                 f.size_on_disk_str,
                 f.file_path,
-                rev.refs,
+                set(rev.refs),
                 rev.commit_hash[:8],
             )
             files.extend([fi])

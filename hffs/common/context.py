@@ -55,7 +55,7 @@ class HffsContext:
         if not cls.get_log_dir().exists():
             cls.get_log_dir().mkdir(parents=True, exist_ok=True)
         if not cls.get_repo_files_dir().exists():
-            cls.repo_files_dir.mkdir(parents=True, exist_ok=True)
+            cls.get_repo_files_dir().mkdir(parents=True, exist_ok=True)
         return cls._instance
 
     @classmethod

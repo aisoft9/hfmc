@@ -39,4 +39,4 @@ def save_file_list(repo_id: str, revision: str, files: RepoFileList) -> None:
             path.touch()
             path.write_text(json.dumps(files))
     except (ValueError, IOError, OSError) as e:
-        logger.debug("Error when saving file list. %s", exc_info=e)
+        logger.debug("Error when saving file list.", exc_info=e)

@@ -27,13 +27,13 @@ class Peer(BaseModel):
             return self.ip < other.ip or (
                 self.ip == other.ip and self.port < other.port
             )
-        raise NotImplementedError
+        return NotImplemented
 
     def __eq__(self, other: object) -> bool:
         """Return True if self is equal to other."""
         if isinstance(other, Peer):
             return self.ip == other.ip and self.port == other.port
-        raise NotImplementedError
+        return NotImplemented
 
     def __hash__(self) -> int:
         """Return the hash value of the Peer."""

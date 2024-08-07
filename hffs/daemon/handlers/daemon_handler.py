@@ -23,7 +23,7 @@ async def peers_changed(_: web.Request) -> web.Response:
     return web.Response()
 
 
-async def stop_daemon(request: web.Request) -> web.Response:
+async def stop_daemon(request: web.Request) -> None:
     """Stop the daemon."""
     HffsContext.get_peer_prober().stop_probe()
 
