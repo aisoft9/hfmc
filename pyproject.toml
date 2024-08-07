@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling>=1.8.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hffs"
+version = "0.1.4"
+description = "A tiny widget for accessing hugging face models easier and faster!"
+requires-python = ">=3.8"
+authors = [{ name = "9#aisoft" }]
+keywords = [
+    "9#aisoft",
+    "huggingface",
+    "p2p"
+]
+dependencies = [
+    "aiofiles",
+    "aiohttp",
+    "huggingface-hub == 0.23.0",
+    "prettytable",
+    "pydantic",
+    "requests",
+    "urllib3",
+    "psutil",
+]
+
+[tool.hatch.envs.default]
+python = "3.8"
+dependencies = [
+  "toml",
+  "ruff",
+  "mypy",
+  "pyupgrade",
+  "pylint",
+]
+
+[tool.hatch.envs.test]
+extra-dependencies = [
+  "pytest",
+  "pytest-asyncio",
+  "types-PyYAML",
+]
+
+
+[tool.hatch.envs.test.scripts]
+unit = "pytest -s"
+lint = "pylint -ry -j 0 {args:hffs}"
+format = "ruff format {args:hffs}"
+types = "mypy --install-types --non-interactive --cache-dir=.mypy_cache/ {args:hffs}"
+
+[tool.ruff]
+target-version = "py38"
+ignore = [
+  "UP006",
+  "ANN401",
+]

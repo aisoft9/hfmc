@@ -1,251 +1,55 @@
-#!/usr/bin/python3
-import argparse
+"""Entrypoint of HFFS."""
+
 import asyncio
-import os
-import logging.handlers
 import logging
-import sys
+from argparse import Namespace
 
-from .common.peer_store import PeerStore
-from .client.model_manager import ModelManager
-from .client.peer_manager import PeerManager
-from .server import http_server
-from .common.settings import HFFS_LOG_DIR
-from .client.daemon_manager import daemon_start, daemon_stop, daemon_status
-from .client.noshare_manager import noshare_add, noshare_ls, noshare_rm
-from .client.conf_manager import conf_cache_set, conf_cache_get, conf_cache_reset
-
-from .client.uninstall_manager import uninstall_hffs
+from hffs.client import model_cmd, peer_cmd, uninstall_cmd
+from hffs.common.context import HffsContext
+from hffs.config import conf_cmd, config_manager
+from hffs.daemon import daemon_cmd
+from hffs.utils import auth_cmd, logging as logging_utils
+from hffs.utils.args import arg_parser
 
 logger = logging.getLogger(__name__)
-INVALID_SUBCOMMAND = "Invalid subcommand"
 
 
-class InvalidCommandException(Exception):
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return self.message
-
-
-async def peer_cmd(args):
-    with PeerStore() as store:
-        peer_manager = PeerManager(store)
-
-        if args.peer_command == "add":
-            peer_manager.add_peer(args.IP, args.port)
-        elif args.peer_command == "rm":
-            peer_manager.remove_peer(args.IP, args.port)
-        elif args.peer_command == "ls":
-            await peer_manager.list_peers()
-        else:  # no matching subcmd
-            raise InvalidCommandException(INVALID_SUBCOMMAND)
-
-    if args.peer_command in ("add", "rm"):
-        await peer_manager.notify_peer_change()
-
-
-async def model_cmd(args):
-    model_manager = ModelManager()
-    model_manager.init()
-
-    if args.model_command == "search":
-        await model_manager.search_model(args.repo_id, args.file, args.revision)
-    elif args.model_command == "add":
-        await model_manager.add(args.repo_id, args.file, args.token, args.revision)
-    elif args.model_command == "ls":
-        model_manager.ls(args.repo_id)
-    elif args.model_command == "rm":
-        model_manager.rm(args.repo_id, revision=args.revision,
-                         file_name=args.file)
+async def _exec_cmd(args: Namespace) -> None:
+    if args.command == "daemon":
+        exec_cmd = daemon_cmd.exec_cmd
+    elif args.command == "peer":
+        exec_cmd = peer_cmd.exec_cmd
+    elif args.command == "model":
+        exec_cmd = model_cmd.exec_cmd
+    elif args.command == "conf":
+        exec_cmd = conf_cmd.exec_cmd
+    elif args.command == "auth":
+        exec_cmd = auth_cmd.exec_cmd
+    elif args.command == "uninstall":
+        exec_cmd = uninstall_cmd.exec_cmd
     else:
-        raise InvalidCommandException(INVALID_SUBCOMMAND)
+        raise NotImplementedError
+
+    await exec_cmd(args)
 
 
-async def noshare_cmd(args):
-    if args.noshare_command == "add":
-        noshare_add(args.repo_id)
-    elif args.noshare_command == "ls":
-        noshare_ls()
-    elif args.noshare_command == "rm":
-        noshare_rm(args.repo_id)
-    else:
-        raise InvalidCommandException(INVALID_SUBCOMMAND)
+async def _async_main() -> None:
+    config = config_manager.load_config()
+    HffsContext.init_with_config(config)
+
+    args = arg_parser()
+    logging_utils.setup_logging(args)
+
+    await _exec_cmd(args)
 
 
-async def daemon_cmd(args):
-    if args.daemon_command == "start":
-        if args.daemon == "true":
-            await daemon_start(args)
-        else:
-            await http_server.start_server(args.port)
-    elif args.daemon_command == "stop":
-        await daemon_stop()
-    elif args.daemon_command == "status":
-        await daemon_status()
-    else:
-        raise InvalidCommandException(INVALID_SUBCOMMAND)
-
-
-async def conf_cache_cmd(args):
-    if args.conf_cache_command == "set":
-        await conf_cache_set(args.path)
-    elif args.conf_cache_command == "get":
-        await conf_cache_get()
-    elif args.conf_cache_command == "reset":
-        await conf_cache_reset()
-    else:
-        raise InvalidCommandException(INVALID_SUBCOMMAND)
-
-
-async def conf_cmd(args):
-    if args.conf_command == "cache":
-        await conf_cache_cmd(args)
-    else:
-        raise InvalidCommandException(INVALID_SUBCOMMAND)
-
-
-async def uninstall_cmd():
-    await uninstall_hffs()
-
-
-async def exec_cmd(args, parser):
+def main() -> None:
+    """Entrypoint of HFFS."""
     try:
-        if args.command == "peer":
-            await peer_cmd(args)
-        elif args.command == "model":
-            await model_cmd(args)
-        elif args.command == "daemon":
-            await daemon_cmd(args)
-        elif args.command == "noshare":
-            await noshare_cmd(args)
-        elif args.command == "conf":
-            await conf_cmd(args)
-        elif args.command == "uninstall":
-            await uninstall_cmd()
-        else:
-            raise InvalidCommandException("Invalid command")
-    except InvalidCommandException as e:
-        print("{}".format(e))
-        parser.print_usage()
-    except Exception as e:
-        print(f"{e}")
-
-
-def arg_parser():
-    parser = argparse.ArgumentParser(prog='hffs')
-    subparsers = parser.add_subparsers(dest='command')
-
-    # hffs daemon {start,stop} [--port port]
-    daemon_parser = subparsers.add_parser('daemon')
-    daemon_subparsers = daemon_parser.add_subparsers(dest='daemon_command')
-    daemon_start_parser = daemon_subparsers.add_parser('start')
-    daemon_start_parser.add_argument('--port', type=int, default=9009)
-    daemon_start_parser.add_argument("--daemon", type=str, default="true")
-    daemon_subparsers.add_parser('stop')
-    daemon_subparsers.add_parser('status')
-
-    # hffs peer {add,rm,ls} IP [--port port]
-    peer_parser = subparsers.add_parser('peer')
-    peer_subparsers = peer_parser.add_subparsers(dest='peer_command')
-    peer_add_parser = peer_subparsers.add_parser('add')
-    peer_add_parser.add_argument('IP')
-    peer_add_parser.add_argument('--port', type=int, default=9009)
-    peer_rm_parser = peer_subparsers.add_parser('rm')
-    peer_rm_parser.add_argument('IP')
-    peer_rm_parser.add_argument('--port', type=int, default=9009)
-    peer_subparsers.add_parser('ls')
-
-    # hffs model {ls,add,rm,search} [--repo-id id] [--revision REVISION] [--file FILE]
-    model_parser = subparsers.add_parser('model')
-    model_subparsers = model_parser.add_subparsers(dest='model_command')
-    model_ls_parser = model_subparsers.add_parser('ls')
-    model_ls_parser.add_argument('--repo_id')
-    model_add_parser = model_subparsers.add_parser('add')
-    model_add_parser.add_argument('repo_id')
-    model_add_parser.add_argument('--file', type=str)
-    model_add_parser.add_argument('--revision', type=str, default="main")
-    model_add_parser.add_argument('--token', type=str)
-    model_rm_parser = model_subparsers.add_parser('rm')
-    model_rm_parser.add_argument('repo_id')
-    model_rm_parser.add_argument('--file', type=str)
-    model_rm_parser.add_argument('--revision', type=str)
-    model_search_parser = model_subparsers.add_parser('search')
-    model_search_parser.add_argument('repo_id')
-    model_search_parser.add_argument('--file', type=str)
-    model_search_parser.add_argument('--revision', type=str, default="main")
-
-    noshare_parser = subparsers.add_parser('noshare')
-    noshare_subparsers = noshare_parser.add_subparsers(dest='noshare_command')
-    noshare_add_parser = noshare_subparsers.add_parser('add')
-    noshare_add_parser.add_argument('repo_id')
-    noshare_subparsers.add_parser('ls')
-    noshare_rm_parser = noshare_subparsers.add_parser('rm')
-    noshare_rm_parser.add_argument('repo_id')
-
-    conf_parser = subparsers.add_parser('conf')
-    conf_subparsers = conf_parser.add_subparsers(dest='conf_command')
-    conf_cache_parser = conf_subparsers.add_parser('cache')
-    conf_cache_subparsers = conf_cache_parser.add_subparsers(dest='conf_cache_command')
-    conf_cache_set_parser = conf_cache_subparsers.add_parser('set')
-    conf_cache_set_parser.add_argument('path')
-    conf_cache_subparsers.add_parser('get')
-    conf_cache_subparsers.add_parser('reset')
-
-    # hffs uninstall
-    subparsers.add_parser('uninstall')
-
-    return parser.parse_args(), parser
-
-
-def logging_level():
-    # Only use DEBUG or INFO level for logging
-    verbose = os.environ.get("HFFS_VERBOSE", None)
-    return logging.DEBUG if verbose else logging.INFO
-
-
-def logging_handler(args):
-    # daemon's logs go to log files, others go to stdout
-    if args.command == "daemon" and args.daemon_command == "start" and args.daemon == "false":
-        os.makedirs(HFFS_LOG_DIR, exist_ok=True)
-        log_path = os.path.join(HFFS_LOG_DIR, "hffs.log")
-        handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=2*1024*1024, backupCount=5)
-        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        handler.setFormatter(logging.Formatter(log_format))
-    else:
-        handler = logging.StreamHandler(stream=sys.stderr)
-        log_format = "%(message)s"
-        handler.setFormatter(logging.Formatter(log_format))
-
-    return handler
-
-
-def setup_logging(args):
-    # configure root logger
-    handler = logging_handler(args)
-
-    level = logging_level()
-    handler.setLevel(level)
-
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    root_logger.setLevel(level)
-
-    # suppress lib's info log
-    logging.getLogger('asyncio').setLevel(logging.WARNING)
-    logging.getLogger('aiohttp').setLevel(logging.WARNING)
-
-
-async def async_main():
-    args, parser = arg_parser()
-    setup_logging(args)
-    await exec_cmd(args, parser)
-
-
-def main():
-    try:
-        asyncio.run(async_main())
-    except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
-        # ignore error, async not run complete, error log may appear between async log
-        pass
+        asyncio.run(_async_main())
+    except (
+        KeyboardInterrupt,
+        asyncio.exceptions.CancelledError,
+    ):
+        # ignore interrupt and cancel errors as they are handled by daemon
+        logger.info("Shutting down HFFS.")
