@@ -13,6 +13,7 @@ keywords = [
     "huggingface",
     "p2p"
 ]
+
 dependencies = [
     "aiofiles",
     "aiohttp",
@@ -23,6 +24,9 @@ dependencies = [
     "urllib3",
     "psutil",
 ]
+
+[project.scripts]
+hffs = "hffs.hffs:main"
 
 [tool.hatch.envs.default]
 python = "3.8"

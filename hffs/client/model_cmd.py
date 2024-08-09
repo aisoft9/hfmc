@@ -101,6 +101,10 @@ async def _add(args: Namespace) -> None:
 
 def _rm(args: Namespace) -> None:
     if args.file:
+        if not args.revision:
+            logger.info("Remove file failed, must specify the revision!")
+            return
+
         target = "File"
         success = model_controller.file_rm(
             args.repo,

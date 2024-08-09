@@ -87,7 +87,7 @@ async def _download_file(
         logger.info("Model is gated. Login with `hffs auth login` first.")
         return False
     except (OSError, ValueError) as e:
-        logger.info("Failed to download model.")
+        logger.info(f"Failed to download model. ERROR: {e}")
         logger.debug("Download file error", exc_info=e)
         return False
     return True
@@ -324,7 +324,7 @@ def file_rm(
         f = hf_wrapper.get_file_info(repo_id, revision, file_name)
 
         if not repo or not rev or not f:
-            logger.debug(
+            logger.info(
                 "Repo or file not found: repo=%s, file=%s, rev=%s",
                 repo_id,
                 file_name,
