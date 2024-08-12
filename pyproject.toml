@@ -9,13 +9,13 @@ description = "A tiny cache widget for accessing hugging face models easier and 
 requires-python = ">=3.8"
 license = "Apache-2.0"
 readme = "README.md"
-authors = [{ name = "9#aisoft", email = "953175531@qq.com" }]
+authors = [{ name = "9# AISoft", email = "aisoft9@163.com" }]
 keywords = [
     "huggingface",
     "models",
     "p2p",
     "cache",
-    "9#aisoft",
+    "9# AISoft",
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
