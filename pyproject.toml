@@ -5,15 +5,33 @@ build-backend = "hatchling.build"
 [project]
 name = "hffs"
 version = "0.1.4"
-description = "A tiny widget for accessing hugging face models easier and faster!"
+description = "A tiny cache widget for accessing hugging face models easier and faster!"
 requires-python = ">=3.8"
-authors = [{ name = "9#aisoft" }]
+license = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "9#aisoft", email = "953175531@qq.com" }]
 keywords = [
-    "9#aisoft",
     "huggingface",
-    "p2p"
+    "models",
+    "p2p",
+    "cache",
+    "9#aisoft",
 ]
-
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Utilities",
+]
 dependencies = [
     "aiofiles",
     "aiohttp",
@@ -24,6 +42,9 @@ dependencies = [
     "urllib3",
     "psutil",
 ]
+
+[project.urls]
+"GitHub" = "https://github.com/madstorage-dev/hffs"
 
 [project.scripts]
 hffs = "hffs.hffs:main"
