@@ -1,6 +1,6 @@
-"""HFFS main."""
+"""HFMC main."""
 
-from hffs.hffs import main
+from hfmc.hfmc import main
 
 if __name__ == "__main__":
     main()

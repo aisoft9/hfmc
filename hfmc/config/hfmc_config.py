@@ -1,4 +1,4 @@
-"""HFFS Configuration Class."""
+"""HFMC Configuration Class."""
 
 from __future__ import annotations
 
@@ -8,15 +8,15 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-CONFIG_DIR = Path.home() / ".hffs"
+CONFIG_DIR = Path.home() / ".hfmc"
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
-DEFAULT_CACHE_DIR = Path.home() / ".cache" / "hffs"
+DEFAULT_CACHE_DIR = Path.home() / ".cache" / "hfmc"
 DEFAULT_DAEMON_PORT = 9090
 
 
 class Peer(BaseModel):
-    """Peer definition for HFFS."""
+    """Peer definition for HFMC."""
 
     ip: str = Field(exclude=False, frozen=True)
     port: int = Field(exclude=False, frozen=True)
@@ -40,16 +40,16 @@ class Peer(BaseModel):
         return hash((self.ip, self.port))
 
 
-class HffsConfigOption(str, Enum):
-    """HFFS configuration options."""
+class HfmcConfigOption(str, Enum):
+    """HFMC configuration options."""
 
     CACHE: str = "cache_dir"
     PORT: str = "daemon_port"
     PEERS: str = "peers"
 
 
-class HffsConfig(BaseModel):
-    """Data class for HFFS directory configuration."""
+class HfmcConfig(BaseModel):
+    """Data class for HFMC directory configuration."""
 
     cache_dir: str = Field(
         description="Directory for storing cache files",

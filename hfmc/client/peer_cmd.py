@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, List
 
-from hffs.client import peer_controller
+from hfmc.client import peer_controller
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
-    from hffs.config.hffs_config import Peer
+    from hfmc.config.hfmc_config import Peer
 
 logger = logging.getLogger(__name__)
 

@@ -2,15 +2,15 @@
 
 from typing import cast
 
-import hffs.config.config_manager as manager
-from hffs.config.hffs_config import (
+import hfmc.config.config_manager as manager
+from hfmc.config.hfmc_config import (
     CONFIG_FILE,
     DEFAULT_CACHE_DIR,
     DEFAULT_DAEMON_PORT,
-    HffsConfig,
+    HfmcConfig,
     Peer,
 )
-from hffs.utils.yaml import yaml_load
+from hfmc.utils.yaml import yaml_load
 
 
 def test_init() -> None:
@@ -41,7 +41,7 @@ def test_save_and_load() -> None:
     cache_dir = custom["cache_dir"]
     daemon_port = custom["daemon_port"]
 
-    conf = HffsConfig(
+    conf = HfmcConfig(
         cache_dir=cache_dir,
         peers=peers,
         daemon_port=daemon_port,

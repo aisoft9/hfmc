@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any, List
 
 import huggingface_hub as hf
 
-from hffs.common.context import HffsContext
-from hffs.common.etag import load_etag, save_etag
-from hffs.config.hffs_config import HffsConfig
+from hfmc.common.context import HfmcContext
+from hfmc.common.etag import load_etag, save_etag
+from hfmc.config.hfmc_config import HfmcConfig
 
 if TYPE_CHECKING:
     import py
@@ -27,7 +27,7 @@ def test_save_and_load(
     """Test save etag."""
 
     def mock_module_path(*_: List[Any], **__: dict[str, Any]) -> str:
-        return str(HffsContext.get_model_dir() / REPO / REV / FILE)
+        return str(HfmcContext.get_model_dir() / REPO / REV / FILE)
 
     monkeypatch.setattr(
         hf,
@@ -35,9 +35,9 @@ def test_save_and_load(
         mock_module_path,
     )
 
-    conf = HffsConfig(cache_dir=str(tmpdir))
+    conf = HfmcConfig(cache_dir=str(tmpdir))
 
-    HffsContext.init_with_config(conf)
+    HfmcContext.init_with_config(conf)
 
     save_etag(ETAG, REPO, FILE, REV)
     etag = load_etag(REPO, FILE, REV)

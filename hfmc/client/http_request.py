@@ -14,8 +14,8 @@ from huggingface_hub import (  # type: ignore[import-untyped]
     hf_hub_url,
 )
 
-from hffs.common.context import HffsContext
-from hffs.common.api_settings import (
+from hfmc.common.context import HfmcContext
+from hfmc.common.api_settings import (
     API_DAEMON_PEERS_ALIVE,
     API_DAEMON_PEERS_CHANGE,
     API_DAEMON_RUNNING,
@@ -27,8 +27,8 @@ from hffs.common.api_settings import (
     TIMEOUT_PEERS,
     ApiType,
 )
-from hffs.common.peer import Peer
-from hffs.common.repo_files import RepoFileList
+from hfmc.common.peer import Peer
+from hfmc.common.repo_files import RepoFileList
 
 logger = logging.getLogger(__name__)
 
@@ -104,21 +104,21 @@ async def ping(target: Peer) -> Peer:
 
 async def stop_daemon() -> bool:
     """Stop a daemon service."""
-    url = _api_url(HffsContext.get_daemon(), API_DAEMON_STOP)
+    url = _api_url(HfmcContext.get_daemon(), API_DAEMON_STOP)
     async with _quiet_get(url, TIMEOUT_DAEMON) as resp:
         return resp is not None and resp.status == HTTP_STATUS_OK
 
 
 async def is_daemon_running() -> bool:
     """Check if daemon is running."""
-    url = _api_url(HffsContext.get_daemon(), API_DAEMON_RUNNING)
+    url = _api_url(HfmcContext.get_daemon(), API_DAEMON_RUNNING)
     async with _quiet_get(url, TIMEOUT_DAEMON) as resp:
         return resp is not None and resp.status == HTTP_STATUS_OK
 
 
 async def get_alive_peers() -> List[Peer]:
     """Get a list of alive peers."""
-    url = _api_url(HffsContext.get_daemon(), API_DAEMON_PEERS_ALIVE)
+    url = _api_url(HfmcContext.get_daemon(), API_DAEMON_PEERS_ALIVE)
     async with _quiet_get(url, TIMEOUT_DAEMON) as resp:
         if not resp:
             return []
@@ -127,7 +127,7 @@ async def get_alive_peers() -> List[Peer]:
 
 async def notify_peers_change() -> bool:
     """Notify peers about a change in peer list."""
-    url = _api_url(HffsContext.get_daemon(), API_DAEMON_PEERS_CHANGE)
+    url = _api_url(HfmcContext.get_daemon(), API_DAEMON_PEERS_CHANGE)
     async with _quiet_get(url, TIMEOUT_DAEMON) as resp:
         return resp is not None and resp.status == HTTP_STATUS_OK
 

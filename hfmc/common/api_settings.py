@@ -1,10 +1,10 @@
-"""Settings for HFFS daemon service."""
+"""Settings for HFMC daemon service."""
 
 from aiohttp import ClientTimeout
 
 ApiType = str
 
-API_PREFIX: ApiType = "/hffs_api/{service}"
+API_PREFIX: ApiType = "/hfmc_api/{service}"
 
 API_PEERS_PROBE: ApiType = API_PREFIX.format(service="peers/ping")
 

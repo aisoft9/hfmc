@@ -1,4 +1,4 @@
-"""Define HFFS context."""
+"""Define HFMC context."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
-from hffs.common.peer import Peer
+from hfmc.common.peer import Peer
 
 if TYPE_CHECKING:
-    from hffs.config.hffs_config import HffsConfig
-    from hffs.daemon.prober import PeerProber
+    from hfmc.config.hfmc_config import HfmcConfig
+    from hfmc.daemon.prober import PeerProber
 
 
 @dataclass()
-class HffsContext:
-    """HFFS context."""
+class HfmcContext:
+    """HFMC context."""
 
     # properties
     port: int = field()
@@ -31,15 +31,15 @@ class HffsContext:
     )
 
     # global context reference
-    _instance: HffsContext | None = field(
+    _instance: HfmcContext | None = field(
         default=None,
         init=False,
         repr=False,
     )
 
     @classmethod
-    def init_with_config(cls, config: HffsConfig) -> HffsContext:
-        """Create HFFS context from configuration."""
+    def init_with_config(cls, config: HfmcConfig) -> HfmcContext:
+        """Create HFMC context from configuration."""
         cls._instance = cls(
             port=config.daemon_port,
             model_dir=Path(config.cache_dir) / "models",
@@ -108,7 +108,7 @@ class HffsContext:
     @classmethod
     def update_peers(
         cls,
-        conf: HffsConfig,
+        conf: HfmcConfig,
         old_peers: List[Peer],
     ) -> List[Peer]:
         """Load peers from config and then update their states."""

@@ -1,4 +1,4 @@
-"""Manager etags for HFFS model files.
+"""Manager etags for HFMC model files.
 
 This module provides functions to manage etags for Hugging Face model files.
 It is needed because huggingface_hub 0.23.0 does not save etags of model files
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import huggingface_hub as hf  # type: ignore[import-untyped]
 
-from hffs.common.context import HffsContext
+from hfmc.common.context import HfmcContext
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def _get_etag_path(repo_id: str, filename: str, revision: str) -> Path | None:
         repo_id=repo_id,
         filename=filename,
         revision=revision,
-        cache_dir=HffsContext.get_model_dir_str(),
+        cache_dir=HfmcContext.get_model_dir_str(),
     )
 
     # model_path type is (str | Any | None)
@@ -32,8 +32,8 @@ def _get_etag_path(repo_id: str, filename: str, revision: str) -> Path | None:
     if not isinstance(model_path, str):
         return None
 
-    rel_path = Path(model_path).relative_to(HffsContext.get_model_dir())
-    return HffsContext.get_etag_dir() / rel_path
+    rel_path = Path(model_path).relative_to(HfmcContext.get_model_dir())
+    return HfmcContext.get_etag_dir() / rel_path
 
 
 def load_etag(repo_id: str, file_name: str, revision: str) -> str | None:

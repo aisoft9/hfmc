@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from hffs.common.peer import Peer
+    from hfmc.common.peer import Peer
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class PeerProber:
         After that, the peer is put back into the heap.
         """
         # pylint: disable=import-outside-toplevel
-        from hffs.client.http_request import ping  # resolve cyclic import
+        from hfmc.client.http_request import ping  # resolve cyclic import
 
         if self._probing:
             return

@@ -10,16 +10,16 @@ from typing import TYPE_CHECKING, Any, Coroutine, List, TypeVar
 from huggingface_hub import hf_hub_download  # type: ignore[import-untyped]
 from huggingface_hub.utils import GatedRepoError  # type: ignore[import-untyped]
 
-from hffs.client import http_request as request
-from hffs.common import hf_wrapper
-from hffs.common.context import HffsContext
-from hffs.common.etag import save_etag
-from hffs.common.repo_files import RepoFileList, load_file_list, save_file_list
+from hfmc.client import http_request as request
+from hfmc.common import hf_wrapper
+from hfmc.common.context import HfmcContext
+from hfmc.common.etag import save_etag
+from hfmc.common.repo_files import RepoFileList, load_file_list, save_file_list
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from hffs.common.peer import Peer
+    from hfmc.common.peer import Peer
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ async def _download_file(
             repo_id=repo_id,
             revision=revision,
             filename=file_name,
-            cache_dir=HffsContext.get_model_dir_str(),
+            cache_dir=HfmcContext.get_model_dir_str(),
         )
 
         etag = await request.get_file_etag(
@@ -84,7 +84,7 @@ async def _download_file(
 
         save_etag(etag, repo_id, file_name, revision)
     except GatedRepoError:
-        logger.info("Model is gated. Login with `hffs auth login` first.")
+        logger.info("Model is gated. Login with `hfmc auth login` first.")
         return False
     except (OSError, ValueError) as e:
         logger.info(f"Failed to download model. ERROR: {e}")
@@ -104,7 +104,7 @@ async def file_add(
     file_name: str,
     revision: str,
 ) -> bool:
-    """Download and add model files to HFFS."""
+    """Download and add model files to HFMC."""
     if hf_wrapper.get_file_info(repo_id, revision, file_name) is not None:
         # file is already downloaded
         return True
@@ -176,7 +176,7 @@ async def repo_add(
     repo_id: str,
     revision: str,
 ) -> bool:
-    """Download and add all files in a repo to HFFS."""
+    """Download and add all files in a repo to HFMC."""
     normalized_rev = hf_wrapper.verify_revision(
         repo_id,
         revision,

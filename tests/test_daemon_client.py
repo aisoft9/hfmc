@@ -2,8 +2,8 @@
 
 import pytest
 
-from hffs.client.http_request import ping
-from hffs.common.peer import Peer
+from hfmc.client.http_request import ping
+from hfmc.common.peer import Peer
 
 
 @pytest.mark.asyncio()

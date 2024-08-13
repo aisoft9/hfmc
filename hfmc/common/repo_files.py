@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from hffs.common.context import HffsContext
+from hfmc.common.context import HfmcContext
 
 RepoFileList = List[str]
 
@@ -16,7 +16,7 @@ def _file_list_local_file(
     repo_id: str,
     revision: str,
 ) -> Path:
-    return HffsContext.get_repo_files_dir() / repo_id / revision / "files.json"
+    return HfmcContext.get_repo_files_dir() / repo_id / revision / "files.json"
 
 
 def load_file_list(

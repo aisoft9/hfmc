@@ -1,15 +1,15 @@
-"""Entrypoint of HFFS."""
+"""Entrypoint of HFMC."""
 
 import asyncio
 import logging
 from argparse import Namespace
 
-from hffs.client import model_cmd, peer_cmd, uninstall_cmd
-from hffs.common.context import HffsContext
-from hffs.config import conf_cmd, config_manager
-from hffs.daemon import daemon_cmd
-from hffs.utils import auth_cmd, logging as logging_utils
-from hffs.utils.args import arg_parser
+from hfmc.client import model_cmd, peer_cmd, uninstall_cmd
+from hfmc.common.context import HfmcContext
+from hfmc.config import conf_cmd, config_manager
+from hfmc.daemon import daemon_cmd
+from hfmc.utils import auth_cmd, logging as logging_utils
+from hfmc.utils.args import arg_parser
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ async def _exec_cmd(args: Namespace) -> None:
 
 async def _async_main() -> None:
     config = config_manager.load_config()
-    HffsContext.init_with_config(config)
+    HfmcContext.init_with_config(config)
 
     args = arg_parser()
     logging_utils.setup_logging(args)
@@ -44,7 +44,7 @@ async def _async_main() -> None:
 
 
 def main() -> None:
-    """Entrypoint of HFFS."""
+    """Entrypoint of HFMC."""
     try:
         asyncio.run(_async_main())
     except (
@@ -52,4 +52,4 @@ def main() -> None:
         asyncio.exceptions.CancelledError,
     ):
         # ignore interrupt and cancel errors as they are handled by daemon
-        logger.info("Shutting down HFFS.")
+        logger.info("Shutting down HFMC.")

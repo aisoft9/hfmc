@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Tuple
 import aiofiles
 from aiohttp import web
 
-from hffs.common import hf_wrapper, repo_files
-from hffs.common.etag import load_etag
+from hfmc.common import hf_wrapper, repo_files
+from hfmc.common.etag import load_etag
 
 if TYPE_CHECKING:
     from pathlib import Path

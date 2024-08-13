@@ -3,8 +3,8 @@
 import logging
 from argparse import Namespace
 
-from hffs.daemon import manager as daemon_manager
-from hffs.daemon import server
+from hfmc.daemon import manager as daemon_manager
+from hfmc.daemon import server
 
 logger = logging.getLogger(__name__)
 

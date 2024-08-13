@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, List
 
 from prettytable import PrettyTable
 
-from hffs.client import model_controller
+from hfmc.client import model_controller
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
-    from hffs.client.model_controller import FileInfo, RepoInfo
+    from hfmc.client.model_controller import FileInfo, RepoInfo
 
 logger = logging.getLogger(__name__)
 

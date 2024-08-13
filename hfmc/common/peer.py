@@ -1,11 +1,11 @@
-"""Context Peer definition for HFFS."""
+"""Context Peer definition for HFMC."""
 
 from dataclasses import dataclass, field
 
 
 @dataclass(order=True, unsafe_hash=True)
 class Peer:
-    """Peer definition for HFFS."""
+    """Peer definition for HFMC."""
 
     ip: str = field(hash=True)
     port: int = field(hash=True)

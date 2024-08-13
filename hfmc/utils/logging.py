@@ -5,8 +5,8 @@ import logging
 import logging.handlers
 import sys
 
-from hffs.common.context import HffsContext
-from hffs.utils import args as arg_utils
+from hfmc.common.context import HfmcContext
+from hfmc.utils import args as arg_utils
 
 
 def _create_stream_handler(level: int) -> logging.Handler:
@@ -19,9 +19,9 @@ def _create_stream_handler(level: int) -> logging.Handler:
 
 def _create_file_handler(level: int) -> logging.Handler:
     """Create a file handler."""
-    log_dir = HffsContext.get_log_dir()
+    log_dir = HfmcContext.get_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "hffs.log"
+    log_file = log_dir / "hfmc.log"
 
     handler = logging.handlers.RotatingFileHandler(
         log_file,

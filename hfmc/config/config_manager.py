@@ -4,22 +4,22 @@ from __future__ import annotations
 
 from typing import TypeVar, cast
 
-from hffs.utils.yaml import yaml_dump, yaml_load
+from hfmc.utils.yaml import yaml_dump, yaml_load
 
-from .hffs_config import (
+from .hfmc_config import (
     CONFIG_DIR,
     CONFIG_FILE,
-    HffsConfig,
+    HfmcConfig,
 )
-from .hffs_config import (
-    HffsConfigOption as ConfOpt,
+from .hfmc_config import (
+    HfmcConfigOption as ConfOpt,
 )
 
-DEFAULT_CONFIG = HffsConfig()
+DEFAULT_CONFIG = HfmcConfig()
 
 
 def init_config() -> None:
-    """Initialize HFFS configuration."""
+    """Initialize HFMC configuration."""
     if not CONFIG_DIR.exists():
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -30,17 +30,17 @@ def init_config() -> None:
     CONFIG_FILE.write_text(yaml_dump(DEFAULT_CONFIG))
 
 
-def load_config() -> HffsConfig:
-    """Load HFFS configuration."""
+def load_config() -> HfmcConfig:
+    """Load HFMC configuration."""
     if not CONFIG_FILE.exists():
         init_config()
 
     conf_dict = yaml_load(CONFIG_FILE)
-    return HffsConfig.model_validate(conf_dict)
+    return HfmcConfig.model_validate(conf_dict)
 
 
-def save_config(config: HffsConfig) -> None:
-    """Save HFFS configuration."""
+def save_config(config: HfmcConfig) -> None:
+    """Save HFMC configuration."""
     if not CONFIG_FILE.exists():
         init_config()
 
@@ -48,7 +48,7 @@ def save_config(config: HffsConfig) -> None:
 
 
 def get_config_yaml() -> str:
-    """Get HFFS configuration in yaml format."""
+    """Get HFMC configuration in yaml format."""
     return CONFIG_FILE.read_text()
 
 

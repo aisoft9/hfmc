@@ -5,27 +5,27 @@ from dataclasses import asdict
 from aiohttp import web
 from aiohttp.web_runner import GracefulExit
 
-from hffs.common.context import HffsContext
-from hffs.config import config_manager
+from hfmc.common.context import HfmcContext
+from hfmc.config import config_manager
 
 
 async def alive_peers(_: web.Request) -> web.Response:
     """Find alive peers."""
-    alives = HffsContext.get_peer_prober().get_alives()
+    alives = HfmcContext.get_peer_prober().get_alives()
     return web.json_response([asdict(peer) for peer in alives])
 
 
 async def peers_changed(_: web.Request) -> web.Response:
     """Update peers."""
     config = config_manager.load_config()
-    new_peers = HffsContext.update_peers(config, HffsContext.get_peers())
-    HffsContext.get_peer_prober().update_peers(new_peers)
+    new_peers = HfmcContext.update_peers(config, HfmcContext.get_peers())
+    HfmcContext.get_peer_prober().update_peers(new_peers)
     return web.Response()
 
 
 async def stop_daemon(request: web.Request) -> None:
     """Stop the daemon."""
-    HffsContext.get_peer_prober().stop_probe()
+    HfmcContext.get_peer_prober().stop_probe()
 
     resp = web.Response()
     await resp.prepare(request)

@@ -7,8 +7,8 @@ from typing import List
 import huggingface_hub as hf  # type: ignore[import-untyped]
 from huggingface_hub.hf_api import HfApi  # type: ignore[import-untyped]
 
-from hffs.common.context import HffsContext
-from hffs.common.repo_files import RepoFileList
+from hfmc.common.context import HfmcContext
+from hfmc.common.repo_files import RepoFileList
 
 COMMIT_HASH_HEADER = hf.constants.HUGGINGFACE_HEADER_X_REPO_COMMIT
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def get_cache_info() -> hf.HFCacheInfo:
     """Get cache info."""
-    return hf.scan_cache_dir(HffsContext.get_model_dir_str())
+    return hf.scan_cache_dir(HfmcContext.get_model_dir_str())
 
 
 def get_repo_info(repo_id: str) -> hf.CachedRepoInfo | None:
