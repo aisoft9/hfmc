@@ -1,6 +1,8 @@
 
 # HuggingFace Model Cache
 
+[English](/README.md)
+
 HuggingFace Model Cache (简称 "HFMC") 是一款“小而美”的工具，旨在帮助用户更快、更容易地使用HuggingFace上的模型。HFMC 可以帮助用户完成下面的工作：
 
 1. 和其他 HFMC 节点之间共享模型文件，避免从 hf.co 原站重复下载同一个模型；

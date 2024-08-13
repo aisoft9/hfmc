@@ -1,5 +1,7 @@
 # HuggingFace Model Cache
 
+[简体中文](/doc/README.zh.md)
+
 HuggingFace Model Cache (referred to as "HFMC") is a compact and efficient tool designed to help users use models on HuggingFace faster and more easily. HFMC assists users in the following ways:
 
 1. Sharing model files between different HFMC nodes to avoid downloading the same model repeatedly from hf.co;
