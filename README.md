@@ -1,6 +1,6 @@
 # HuggingFace Model Cache
 
-[简体中文](/doc/README.zh.md)
+[简体中文](https://github.com/madstorage-dev/hffs/blob/main/doc/README.zh.md)
 
 HuggingFace Model Cache (referred to as "HFMC") is a compact and efficient tool designed to help users use models on HuggingFace faster and more easily. HFMC assists users in the following ways:
 
@@ -37,6 +37,6 @@ HFMC supports Python version 3.8 and above. Install HFMC using the following com
 
 ## Detailed Documentation
 
-- [HFMC User Guide](/doc/GUIDELINE.en.md)
-- [How HFMC Works](/doc/ARCHITECTURE.en.md)
-- [HFMC Command Line Reference](/doc/REFERENCE.en.md)
+- [HFMC User Guide](https://github.com/madstorage-dev/hffs/blob/main/doc/GUIDELINE.en.md)
+- [How HFMC Works](https://github.com/madstorage-dev/hffs/blob/main/doc/ARCHITECTURE.en.md)
+- [HFMC Command Line Reference](https://github.com/madstorage-dev/hffs/blob/main/doc/REFERENCE.en.md)
