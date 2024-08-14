@@ -46,6 +46,7 @@ dependencies = [
 [project.urls]
 "GitHub" = "https://github.com/madstorage-dev/hffs"
 "Documentation" = "https://sg-c.github.io/hfmc-doc/"
+"中文文档" = "https://sg-c.github.io/hfmc-doc/README.zh"
 
 [project.scripts]
 hfmc = "hfmc.hfmc:main"
