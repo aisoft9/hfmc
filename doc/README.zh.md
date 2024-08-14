@@ -39,5 +39,4 @@ HFMC 支持 3.8+ 版本的 Python。使用下面的命令即可以安装 HFMC.
 ## 详细文档
 
 - [HFMC 的使用指南](/doc/GUIDELINE.zh.md)
-- [HFMC 的工作原理](/doc/ARCHITECTURE.zh.md)
 - [HFMC 命令行手册](/doc/REFERENCE.zh.md)

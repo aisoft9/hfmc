@@ -38,5 +38,4 @@ HFMC supports Python version 3.8 and above. Install HFMC using the following com
 ## Detailed Documentation
 
 - [HFMC User Guide](https://github.com/madstorage-dev/hffs/blob/main/doc/GUIDELINE.en.md)
-- [How HFMC Works](https://github.com/madstorage-dev/hffs/blob/main/doc/ARCHITECTURE.en.md)
 - [HFMC Command Line Reference](https://github.com/madstorage-dev/hffs/blob/main/doc/REFERENCE.en.md)
