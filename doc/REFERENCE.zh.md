@@ -12,6 +12,20 @@ HFMC 的命令行主要分为以下几个部分。
 
 ## 模型管理
 
+### 参数说明
+
+模型管理相关的命令会用到下面几个参数：
+
+- REPO_ID：模型仓库的ID.
+- REVISION：可以是 git 的 reference （例如，`main`等），也可以是 revision（例如，`ce27ec2`）
+  - REVISION 的默认值是 `main`
+  - 在使用 `hfmc model add` 命令下载整个模型仓库的时候，必须指定 revision（例如，`ce27ec2`）而不能使用 reference（例如，`main`等）。
+- FILE_NAME：文件在仓库中的相对路径
+
+如下图所示，上面几个参数可以从 HuggingFace 的网站得到。
+
+![model cmd params](./images/model-cmd-params.png)
+
 ### 添加、删除模型
 
 添加整个模型仓库：

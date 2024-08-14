@@ -12,7 +12,7 @@
 
 在节点 Pegasus 上，运行下面的命令下载目标模型。由于 HFMC 内部集成了 hf-mirror.com 镜像网站，中国大陆的用户即使不使用 VPN 也可以成功下载到目标模型。
 
-    hfmc model add -r prajjwal1/bert-medium
+    hfmc model add -r prajjwal1/bert-medium -v REV_NUM
 
 然后，执行下面的命令查看下载好的模型。
 
@@ -71,6 +71,10 @@ HFMC 不仅允许用户一次性下载、删除整个模型仓库，还支持用
     hfmc conf cache get
 
 ## 常见问题
+
+### 为什么下载整个模型仓库的时候，必须提供 revision (-v) 参数？
+
+使用 HFMC 添加模型仓库的时候，仓库中的文件可能来自不同的服务器。比如，文件 pytorch_model-1.bin 可能来自节点 Pegasus，而文件 pytorch_model-2.bin 可能来自节点 Cygnus。如果使用默认值 `main` 而不指定具体的 revision 值，有可能导致不同文件的版本不一致的情况。为了避免出现类似的情况，用户需要在下载整个模型仓库的时候指定明确的 revision 参数。（参见[这里](https://stackoverflow.com/questions/73145810/how-do-git-revisions-and-references-relate-to-each-other)了解 git revision 和 git reference 的区别会有助理解文件版本有可能不一致的原因。）
 
 ### 不启动 Daemon 还能使用 HFMC 吗？
 

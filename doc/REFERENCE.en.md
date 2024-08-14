@@ -12,6 +12,20 @@ HFMC command lines are mainly categorized as follows:
 
 ## Model Management
 
+### Parameter Explanation
+
+The following parameters are used in commands related to model management:
+
+- REPO_ID: The ID of the model repository.
+- REVISION: Can be a git reference (e.g., `main`), or a revision (e.g., `ce27ec2`)
+  - The default value for REVISION is `main`
+  - When using the `hfmc model add` command to download an entire model repository, a revision (e.g., `ce27ec2`) must be specified instead of a reference (e.g., `main`).
+- FILE_NAME: The relative path of the file in the repository.
+
+As shown in the image below, these parameters can be obtained from the HuggingFace website.
+
+![model cmd params](./images/model-cmd-params.png)
+
 ### Add and Delete Models
 
 Add an entire model repository:

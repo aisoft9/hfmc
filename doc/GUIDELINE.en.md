@@ -32,7 +32,7 @@ On node "Cygnus", add "Pegasus" to its Peer list with the following command.
 
 Finally, on node "Cygnus", use the following command to download the `prajjwal1/bert-medium` model from "Pegasus".
 
-    hfmc model add -r prajjwal1/bert-medium
+    hfmc model add -r prajjwal1/bert-medium -v REV_NUM
 
 Since the model is downloaded via the local network, the speed should be noticeably faster. Users can try experimenting with larger models to better observe the differences in download efficiency and stability.
 
