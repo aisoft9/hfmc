@@ -36,7 +36,6 @@ def save_file_list(repo_id: str, revision: str, files: RepoFileList) -> None:
     try:
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.touch()
             path.write_text(json.dumps(files))
     except (ValueError, IOError, OSError) as e:
         logger.debug("Error when saving file list.", exc_info=e)

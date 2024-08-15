@@ -62,7 +62,4 @@ def save_etag(etag: str, repo_id: str, file_name: str, revision: str) -> None:
     if not etag_path.parent.exists():
         etag_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if not etag_path.exists():
-        etag_path.touch()
-
     etag_path.write_text(etag)

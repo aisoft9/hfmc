@@ -23,9 +23,6 @@ def init_config() -> None:
     if not CONFIG_DIR.exists():
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    if not CONFIG_FILE.exists():
-        CONFIG_FILE.touch()
-
     # create yaml files based on the configuration settings
     CONFIG_FILE.write_text(yaml_dump(DEFAULT_CONFIG))
 
