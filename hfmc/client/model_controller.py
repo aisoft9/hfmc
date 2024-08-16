@@ -123,7 +123,7 @@ async def file_add(
 
 
 async def _wait_first(
-    tasks: List[Coroutine[Any, Any, T | None]],
+    tasks: List[asyncio.Task[Any, Any, T | None]],
 ) -> T | None:
     done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     if not done:
@@ -142,7 +142,16 @@ async def _file_list_from_peers(
     alives = await request.get_alive_peers()
     if not alives:
         return None
-    tasks = [request.get_repo_file_list(alive, repo_id, revision) for alive in alives]
+    tasks = [
+        asyncio.create_task(
+            request.get_repo_file_list(
+                alive,
+                repo_id,
+                revision,
+            )
+        )
+        for alive in alives
+    ]
     return await _wait_first(tasks)
 
 
@@ -354,6 +363,10 @@ def file_rm(
             ref_files = [ref_dir / ref for ref in rev.refs]
             for ref in ref_files:
                 _rm_file(ref, ref_dir)
+
+        # remove model repo directory if empty
+        if not any(repo.repo_path.iterdir()):
+            repo.repo_path.rmdir()
     except (OSError, ValueError):
         return False
 
