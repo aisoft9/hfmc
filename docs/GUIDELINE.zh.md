@@ -6,7 +6,7 @@
 
 1. 准备2台节点：Pegasus 和 Cygnus。这里使用两台节点的目的是演示局域网内模型共享功能。
 2. 我们使用`prajjwal1/bert-medium`（[链接](https://huggingface.co/prajjwal1/bert-medium/tree/main)）模型做演示。
-3. 在每个节点上安装 HFMC。HFMC 的安装说明请见[这里](https://sg-c.github.io/hfmc-doc/README.zh#install-hfmc)。
+3. 在每个节点上安装 HFMC。HFMC 的安装说明请见[这里](https://aisoft9.github.io/hfmc/README.zh#install-hfmc)。
 
 ### 从 hf-mirror.com 下载模型
 

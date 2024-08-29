@@ -6,7 +6,7 @@
 
 1. Prepare two nodes: "Pegasus" and "Cygnus". The purpose of using two nodes here is to demonstrate the model sharing feature within a local network.
 2. We will use the `prajjwal1/bert-medium` model ([link](https://huggingface.co/prajjwal1/bert-medium/tree/main)) for demonstration.
-3. Install HFMC on each node. Installation instructions for HFMC can be found [here](https://sg-c.github.io/hfmc-doc/#install-hfmc).
+3. Install HFMC on each node. Installation instructions for HFMC can be found [here](https://aisoft9.github.io/hfmc/#install-hfmc).
 
 ### Downloading Models from hf-mirror.com
 

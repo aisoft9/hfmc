@@ -1,7 +1,7 @@
 
 # HuggingFace Model Cache
 
-[English](https://sg-c.github.io/hfmc-doc/)
+[English](https://aisoft9.github.io/hfmc/)
 
 HuggingFace Model Cache (简称 "HFMC") 是一款“小而美”的工具，旨在帮助用户更快、更容易地使用HuggingFace上的模型。HFMC 可以帮助用户完成下面的工作：
 
@@ -40,5 +40,5 @@ HFMC 支持 3.8+ 版本的 Python，并可在 Windows，MacOS，Linux 上运行�
 
 ## 详细文档
 
-- [HFMC 的使用指南](https://sg-c.github.io/hfmc-doc/GUIDELINE.zh)
-- [HFMC 命令行手册](https://sg-c.github.io/hfmc-doc/REFERENCE.zh)
+- [HFMC 的使用指南](https://aisoft9.github.io/hfmc/GUIDELINE.zh)
+- [HFMC 命令行手册](https://aisoft9.github.io/hfmc/REFERENCE.zh)
