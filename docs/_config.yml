@@ -1,0 +1,8 @@
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+title: HuggingFace Model Cache
+description: A compact and efficient tool designed to help users use models on HuggingFace faster and more easily.
+github:
+  repository_url: https://github.com/aisoft9/hfmc
+  is_project_page: false
