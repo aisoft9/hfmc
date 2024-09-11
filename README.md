@@ -1,6 +1,6 @@
 # HuggingFace Model Cache
 
-[简体中文](https://sg-c.github.io/hfmc-doc/README.zh)
+[简体中文](https://aisoft9.github.io/hfmc/README.zh)
 
 HuggingFace Model Cache (referred to as "HFMC") is a compact and efficient tool designed to help users use models on HuggingFace faster and more easily. HFMC assists users in the following ways:
 
@@ -39,5 +39,5 @@ Install HFMC using the following command:
 
 ## Detailed Documentation
 
-- [HFMC User Guide](https://sg-c.github.io/hfmc-doc/GUIDELINE.en)
-- [HFMC Command Line Reference](https://sg-c.github.io/hfmc-doc/REFERENCE.en)
+- [HFMC User Guide](https://aisoft9.github.io/hfmc/GUIDELINE.en)
+- [HFMC Command Line Reference](https://aisoft9.github.io/hfmc/REFERENCE.en)
