@@ -1,4 +1,4 @@
-# HuggingFace Model Cache
+# HuggingFace Model Cache v1.0.0
 
 [简体中文](https://aisoft9.github.io/hfmc/README.zh)
 
